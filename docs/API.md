@@ -4,7 +4,21 @@ Default base URL: `http://127.0.0.1:8787`
 
 ## `GET /api/health`
 
-Returns service status.
+Returns service status and API version.
+
+## `GET /api/dm/status`
+
+Returns the configured DM adapter mode.
+
+## `POST /api/dm/test`
+
+Runs a safe DM adapter test without saving a campaign.
+
+```json
+{
+  "action": "Connection test: describe the porch in one sentence."
+}
+```
 
 ## `GET /api/campaigns`
 
@@ -21,20 +35,25 @@ Creates a new campaign.
 }
 ```
 
+New campaigns now use the v0.5-compatible shape: quest progress/clues, NPC dictionary, active scene, active encounter, pending canon patches, ending receipt, and player condition tags.
+
 ## `GET /api/campaigns/{campaign_id}`
 
-Loads a campaign.
+Loads a campaign. Older server saves are migrated into the v0.5 shape when loaded.
 
 ## `POST /api/campaigns/{campaign_id}/turn`
 
-Submits a player action.
+Submits a freeform player action.
 
 ```json
 {
   "action": "I sneak toward the blue lantern.",
-  "manual_roll": null
+  "manual_roll": null,
+  "allow_ai": true
 }
 ```
+
+The turn engine can now apply quest progress, quest clues, NPC updates, inventory changes, HP changes, and condition tags such as `tired`, `watched`, `marked`, `hidden`, and `inspired`.
 
 ## `POST /api/campaigns/{campaign_id}/roll`
 
@@ -61,3 +80,63 @@ Applies an approved world patch.
   }
 }
 ```
+
+## Adventure parity endpoints
+
+These endpoints mirror the instant-play GitHub Pages loop so hosted/server play can run the same starter-adventure structure.
+
+### `GET /api/campaigns/{campaign_id}/adventure_state`
+
+Returns the current starter-adventure state: in motion, hot thread, finale ready, or complete.
+
+### `POST /api/campaigns/{campaign_id}/scene/draw`
+
+Draws a structured scene card and saves it as `active_scene`.
+
+### `POST /api/campaigns/{campaign_id}/scene/resolve`
+
+Resolves the active scene choice.
+
+```json
+{
+  "choice_index": 0
+}
+```
+
+Successful choices add rewards, quest progress, clues, and optional pending canon patches. Failed choices keep the story playable but can cost HP or add a condition.
+
+### `POST /api/campaigns/{campaign_id}/encounter/draw`
+
+Draws a lightweight encounter card and saves it as `active_encounter`.
+
+### `POST /api/campaigns/{campaign_id}/encounter/resolve`
+
+Resolves the active encounter.
+
+```json
+{
+  "skill": "perception"
+}
+```
+
+Omit `skill` to use the encounter's default skill.
+
+### `POST /api/campaigns/{campaign_id}/npc/meet`
+
+Draws or reintroduces an NPC card and stores it in the campaign NPC ledger.
+
+### `POST /api/campaigns/{campaign_id}/npc/{npc_id}/ask`
+
+Asks a known NPC for help. This can increase trust, add a clue, add an item, and grant the `inspired` condition.
+
+### `POST /api/campaigns/{campaign_id}/camp`
+
+Runs the camp/rest action. It restores HP, clears `tired`/`marked`, may add `inspired`, and logs a rest receipt.
+
+### `POST /api/campaigns/{campaign_id}/finale`
+
+Records a full or partial ending depending on quest readiness. Full finale requires the three starter threads to be ready.
+
+## `GET /api/campaigns/{campaign_id}/questpack`
+
+Exports a simple quest-pack view of the campaign world.
