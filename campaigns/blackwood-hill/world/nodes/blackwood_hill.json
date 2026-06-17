@@ -1,0 +1,13 @@
+{
+  "id": "blackwood_hill",
+  "type": "location",
+  "title": "Blackwood Hill",
+  "tags": [
+    "forest",
+    "blue-lanterns"
+  ],
+  "summary": "A forested hill where blue lanterns burn and old doors remember falsehoods.",
+  "facts": [
+    "Old doors remember the last falsehood spoken near them."
+  ]
+}
