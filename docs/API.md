@@ -10,7 +10,7 @@ Returns service status and API version.
 
 ### `GET /api/content-packs`
 
-Lists reviewed route packs available to the API host. v0.8.5 also returns the backend write-gate status.
+Lists reviewed route packs available to the API host. It also returns the backend write-gate status.
 
 ```json
 {
@@ -102,6 +102,8 @@ Blocked response shape:
 
 Creates a branch-ready submission package without writing files to disk. This supports maintainer workflows where the backend returns proposed file paths and contents for a later PR or branch commit.
 
+v0.8.6 adds `zip_name`, `title`, and `summary` metadata so the browser can convert the returned file payload into a one-click `.zip` download.
+
 Request shape:
 
 ```json
@@ -126,7 +128,10 @@ Response shape:
   "package": {
     "schema": "porchquest.pack_submission_package.v1",
     "pack_id": "example-pack",
+    "title": "Example Pack",
+    "summary": "Example summary.",
     "branch_name": "content-pack/example-pack",
+    "zip_name": "example-pack.submission-package.zip",
     "files": [
       { "path": "content-packs/example-pack.route-pack.json", "content": "..." },
       { "path": "content-packs/example-pack.approval-receipt.json", "content": "..." },
@@ -178,42 +183,8 @@ Loads a campaign. Older server saves are migrated into the current adventure sha
 
 ### `POST /api/campaigns/{campaign_id}/sync_from_client`
 
-Explicitly replaces a server campaign with a browser campaign payload. This supports the Pages app's **Save to Server** button.
-
-```json
-{
-  "campaign": {
-    "id": "browser-blackwood-hill",
-    "version": 9,
-    "name": "Lanterns Under Blackwood Hill",
-    "conditions": ["inspired"],
-    "pending_patches": []
-  }
-}
-```
-
-The endpoint stores the submitted campaign under the URL `{campaign_id}`. It is explicit on purpose; the browser does not silently overwrite server state.
+Accepts a browser-side campaign object and stores it under the requested campaign ID.
 
 ### `POST /api/campaigns/{campaign_id}/reward/draw`
 
-Draws and applies a backend reward to a saved campaign.
-
-### `POST /api/campaigns/{campaign_id}/turn`
-
-Submits a freeform player action.
-
-```json
-{
-  "action": "I inspect the route mark.",
-  "manual_roll": null,
-  "allow_ai": true
-}
-```
-
-The turn engine can apply quest progress, quest clues, NPC updates, inventory changes, HP changes, and condition tags such as `tired`, `watched`, `marked`, `hidden`, and `inspired`.
-
-### Other campaign endpoints
-
-- `POST /api/campaigns/{campaign_id}/roll`
-- `POST /api/campaigns/{campaign_id}/world_patch`
-- `GET /api/campaigns/{campaign_id}/questpack`
+Applies the backend reward table and returns the updated campaign.
