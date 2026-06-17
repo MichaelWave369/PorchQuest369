@@ -1,0 +1,49 @@
+.node-drawer {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.06);
+}
+
+.node-drawer strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.node-drawer p {
+  margin: 0;
+}
+
+.node-list {
+  display: grid;
+  gap: 8px;
+}
+
+.node-list button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(255,255,255,0.05);
+}
+
+.node-list button.active {
+  border-color: rgba(142,202,230,0.72);
+}
+
+.node-list strong,
+.node-list small {
+  display: block;
+}
+
+.route-step {
+  width: 100%;
+  text-align: left;
+}
+
+.stack select {
+  width: 100%;
+  min-height: 40px;
+}
