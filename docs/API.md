@@ -45,6 +45,39 @@ Response shape:
 }
 ```
 
+## `POST /api/content-packs/{pack_id}/save`
+
+Saves a route pack into the backend `content-packs/` folder. This is intended for trusted local/dev authoring, not an unprotected public write route.
+
+Request shape:
+
+```json
+{
+  "pack": {
+    "schema": "porchquest.route_pack.v1",
+    "id": "example-pack",
+    "title": "Example Pack",
+    "quests": [],
+    "scenes": [],
+    "npcs": [],
+    "rewards": []
+  }
+}
+```
+
+Response shape:
+
+```json
+{
+  "saved": {
+    "ok": true,
+    "id": "example-pack",
+    "path": "content-packs/example-pack.route-pack.json",
+    "pack": {}
+  }
+}
+```
+
 ## `GET /api/dm/status`
 
 Returns the configured DM adapter mode.
