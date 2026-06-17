@@ -172,10 +172,27 @@ Status: landed and hardened through v0.9.4.
 - v0.9.4 maintainer queue local actions: reviewed, deferred, and needs changes
 - v0.9.4 session action log and export receipt list persisted in localStorage
 
-## v0.9.5 — next focus
+## v1.0 — player mode
 
-- improve route graph visuals with directional arrows and scene-node grouping
-- add recent packs and favorite packs stored locally
-- add keyboard-friendly editor shortcuts and focus order
-- add mobile compact mode for the editor cards
-- add playtest outcome labels for success, partial, and complication
+Status: landed.
+
+- public page defaults to `Play Adventure` instead of Creator Studio
+- character selection with four presets
+- Start Adventure / Restart Adventure flow
+- scene check action using the route-pack scene skill and DC
+- helper clue action from route-pack NPC cards
+- reward draw action from route-pack reward cards
+- route continuation using route-pack `edges`
+- player sheet for HP, bonus, current scene, inventory, clues, and conditions
+- local adventure receipt log
+- downloadable adventure receipt JSON
+- Creator Studio remains available from Player Mode through `Open Creator Studio`
+
+## v1.0.1 — next focus
+
+- improve scene outcome copy for success, partial success, and complication
+- add a route ending screen
+- add a small dice roll animation
+- add save/resume run controls
+- add optional character naming
+- polish mobile player layout
