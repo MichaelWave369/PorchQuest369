@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -66,9 +67,7 @@ def load_route_pack(pack_id: str) -> Dict[str, Any]:
     raise FileNotFoundError(f"Route pack not found: {pack_id}")
 
 
-def save_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
-    if not _write_enabled():
-        raise PermissionError("Route pack writes are disabled. Set PORCHQUEST_ALLOW_PACK_WRITES=1 for trusted local/backend editing.")
+def _normal_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(pack, dict):
         raise ValueError("Route pack payload must be an object.")
     safe_id = _safe_id(pack_id or str(pack.get("id") or "route-pack"))
@@ -80,9 +79,66 @@ def save_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
     for key in ("quests", "scenes", "npcs", "rewards", "edges"):
         if not isinstance(data.get(key), list):
             data[key] = []
+    return data
+
+
+def save_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
+    if not _write_enabled():
+        raise PermissionError("Route pack writes are disabled. Set PORCHQUEST_ALLOW_PACK_WRITES=1 for trusted local/backend editing.")
+    data = _normal_pack(pack_id, pack)
+    safe_id = data["id"]
     PACK_DIR.mkdir(parents=True, exist_ok=True)
     path = PACK_DIR / f"{safe_id}.route-pack.json"
     with path.open("w", encoding="utf-8") as handle:
         json.dump(data, handle, indent=2, ensure_ascii=False)
         handle.write("\n")
     return {"ok": True, "id": safe_id, "path": f"content-packs/{path.name}", "write_gate": write_gate_status(), "pack": data}
+
+
+def package_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a branch-ready submission package without writing to disk."""
+    data = _normal_pack(pack_id, pack)
+    safe_id = data["id"]
+    now = datetime.now(timezone.utc).isoformat()
+    pack_json = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    receipt = {
+        "schema": "porchquest.pack_submission_receipt.v1",
+        "pack_id": safe_id,
+        "title": data.get("title", safe_id),
+        "created_at": now,
+        "counts": {
+            "quests": len(data.get("quests", [])),
+            "scenes": len(data.get("scenes", [])),
+            "npcs": len(data.get("npcs", [])),
+            "rewards": len(data.get("rewards", [])),
+            "edges": len(data.get("edges", []))
+        },
+        "review_steps": [
+            "schema-check",
+            "claim-boundary-check",
+            "playtest-transcript-check",
+            "maintainer-approval"
+        ]
+    }
+    receipt_json = json.dumps(receipt, indent=2, ensure_ascii=False) + "\n"
+    checklist = "\n".join([
+        f"# {data.get('title', safe_id)} Submission Checklist",
+        "",
+        "- [ ] Schema validation has no blocking errors.",
+        "- [ ] All scenes are claim-safe fantasy/adventure content.",
+        "- [ ] Playtest transcript has been exported and reviewed.",
+        "- [ ] Maintainer approves promotion into reviewed packs.",
+        ""
+    ])
+    return {
+        "schema": "porchquest.pack_submission_package.v1",
+        "pack_id": safe_id,
+        "branch_name": f"content-pack/{safe_id}",
+        "write_gate": write_gate_status(),
+        "files": [
+            {"path": f"content-packs/{safe_id}.route-pack.json", "content": pack_json},
+            {"path": f"content-packs/{safe_id}.approval-receipt.json", "content": receipt_json},
+            {"path": f"docs/reviews/{safe_id}.md", "content": checklist}
+        ],
+        "receipt": receipt
+    }
