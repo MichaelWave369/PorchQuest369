@@ -16,7 +16,7 @@ from .questpack import campaign_to_questpack
 from .rewards import draw_reward
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.8.3")
+app = FastAPI(title="PorchQuest369 API", version="0.8.4")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -91,6 +91,8 @@ def content_pack(pack_id: str) -> Dict[str, Any]:
 def save_content_pack(pack_id: str, req: RoutePackSaveRequest) -> Dict[str, Any]:
     try:
         return {"saved": save_route_pack(pack_id, req.pack)}
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -138,23 +140,30 @@ def sync_from_client(campaign_id: str, req: ClientSyncRequest) -> Dict[str, Any]
     campaign.setdefault("name", "Lanterns Under Blackwood Hill")
     campaign.setdefault("story_log", [])
     campaign.setdefault("pending_patches", [])
-    campaign.setdefault("conditions", [])
     save_campaign(campaign)
-    return {"campaign": campaign, "sync": {"ok": True, "source": "client", "campaign_id": campaign_id}}
+    return {"campaign": campaign, "synced": True}
+
+
+@app.post("/api/campaigns/{campaign_id}/reward/draw")
+def campaign_reward(campaign_id: str) -> Dict[str, Any]:
+    try:
+        campaign = load_campaign(campaign_id)
+        result = draw_reward(campaign)
+        save_campaign(campaign)
+        return {"campaign": campaign, "reward": result}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/campaigns/{campaign_id}/turn")
-def turn(campaign_id: str, req: TurnRequest) -> Dict[str, Any]:
+def run_turn(campaign_id: str, req: TurnRequest) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        result = ai_turn(campaign, req.action, req.manual_roll) if req.allow_ai else None
-        if result is None:
-            result = fallback_turn(campaign, req.action, req.manual_roll)
-            result["dm_backend"] = adapter_status()
-        save_campaign(result["campaign"])
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        result = ai_turn(campaign, req.action) if req.allow_ai else fallback_turn(campaign, req.action, req.manual_roll)
+        save_campaign(campaign)
+        return {"campaign": campaign, "turn": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -163,14 +172,11 @@ def turn(campaign_id: str, req: TurnRequest) -> Dict[str, Any]:
 def roll(campaign_id: str, req: RollRequest) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        result = roll_expr(req.expr, dc=req.dc, seed=int(campaign.get("seed", 123)))
-        campaign["seed"] = result.seed
+        result = roll_expr(req.expr, dc=req.dc, label=req.label)
+        campaign.setdefault("roll_log", []).insert(0, result)
+        campaign["roll_log"] = campaign["roll_log"][:20]
         save_campaign(campaign)
-        payload = result.__dict__
-        payload["label"] = req.label
-        return {"roll": payload, "campaign": campaign}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "roll": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -179,33 +185,37 @@ def roll(campaign_id: str, req: RollRequest) -> Dict[str, Any]:
 def world_patch(campaign_id: str, req: WorldPatchRequest) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        receipt = apply_world_patch(campaign, {"world_patch": req.world_patch})
+        result = apply_world_patch(campaign, req.world_patch)
         save_campaign(campaign)
-        return {"receipt": receipt, "campaign": campaign}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "world_patch": result}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.get("/api/campaigns/{campaign_id}/questpack")
+def questpack(campaign_id: str) -> Dict[str, Any]:
+    try:
+        campaign = load_campaign(campaign_id)
+        return campaign_to_questpack(campaign)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.get("/api/campaigns/{campaign_id}/adventure_state")
-def get_adventure_state(campaign_id: str) -> Dict[str, Any]:
+def api_adventure_state(campaign_id: str) -> Dict[str, Any]:
     try:
-        campaign = load_campaign(campaign_id)
-        return {"adventure_state": adventure_state(campaign), "campaign": campaign}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"adventure": adventure_state(load_campaign(campaign_id))}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/campaigns/{campaign_id}/scene/draw")
 def api_draw_scene(campaign_id: str) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        result = draw_scene(campaign)
+        scene = draw_scene(campaign)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "scene": scene}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -216,9 +226,7 @@ def api_resolve_scene(campaign_id: str, req: SceneChoiceRequest) -> Dict[str, An
         campaign = load_campaign(campaign_id)
         result = resolve_scene(campaign, req.choice_index)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "result": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -227,11 +235,9 @@ def api_resolve_scene(campaign_id: str, req: SceneChoiceRequest) -> Dict[str, An
 def api_draw_encounter(campaign_id: str) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        result = draw_encounter(campaign)
+        encounter = draw_encounter(campaign)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "encounter": encounter}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -242,9 +248,7 @@ def api_resolve_encounter(campaign_id: str, req: EncounterResolveRequest) -> Dic
         campaign = load_campaign(campaign_id)
         result = resolve_encounter(campaign, req.skill)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "result": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -253,11 +257,9 @@ def api_resolve_encounter(campaign_id: str, req: EncounterResolveRequest) -> Dic
 def api_meet_npc(campaign_id: str) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        result = meet_npc(campaign)
+        npc = meet_npc(campaign)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "npc": npc}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -268,56 +270,28 @@ def api_ask_npc(campaign_id: str, npc_id: str) -> Dict[str, Any]:
         campaign = load_campaign(campaign_id)
         result = ask_npc(campaign, npc_id)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "result": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/campaigns/{campaign_id}/camp")
-def api_camp_rest(campaign_id: str) -> Dict[str, Any]:
+def api_camp(campaign_id: str) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
         result = camp_rest(campaign)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "camp": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/campaigns/{campaign_id}/finale")
-def api_complete_finale(campaign_id: str) -> Dict[str, Any]:
+def api_finale(campaign_id: str) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
         result = complete_finale(campaign)
         save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+        return {"campaign": campaign, "ending": result}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
-
-
-@app.post("/api/campaigns/{campaign_id}/reward/draw")
-def api_draw_reward(campaign_id: str) -> Dict[str, Any]:
-    try:
-        campaign = load_campaign(campaign_id)
-        result = draw_reward(campaign)
-        save_campaign(campaign)
-        return result
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-
-
-@app.get("/api/campaigns/{campaign_id}/questpack")
-def questpack(campaign_id: str) -> Dict[str, Any]:
-    try:
-        campaign = load_campaign(campaign_id)
-        return {"questpack": campaign_to_questpack(campaign)}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
