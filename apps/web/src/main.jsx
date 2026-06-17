@@ -12,10 +12,11 @@ import './v14.css';
 import './v15.css';
 import './v16.css';
 import './v17.css';
-import AppV17 from './AppV17.jsx';
+import './v18.css';
+import AppV18 from './AppV18.jsx';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AppV17 />
+    <AppV18 />
   </React.StrictMode>
 );
