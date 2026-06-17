@@ -97,9 +97,9 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Status: landed and hardened through v0.8.8.
+Status: landed and hardened through v0.8.9.
 
-- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, AppV16, AppV17, AppV18, then AppV19
+- public Pages entrypoint switched through AppV10-AppV19 during iterative studio hardening
 - browser studio localStorage route-pack migration through v7
 - contributor-safe route-pack JSON format
 - formal route-pack schema file with optional route `edges`
@@ -139,17 +139,28 @@ Status: landed and hardened through v0.8.8.
 - approval receipt timeline view
 - schema validation fixtures
 - gallery sort controls and thumbnail polish
-- v0.8.7 live bridge docs
 - automated fixture checks for the valid and invalid schema packs
 - manifest checksum preview before zip export
 - approval receipt diff view against current pack
 - maintainer review queue scaffold
-- v0.8.8 maintainer review bridge docs
+- v0.8.9 unified studio cleanup removed the recursive wrapper chain from the live public page
 
-## v0.8.9 — next focus
+## v0.9 — unified UI polish
 
-- object-level diff rows for changed scenes, NPCs, rewards, quests, and route edges
-- review queue actions: mark needs-work, ready, approved, archived
-- checksum receipt export
-- fixture test documentation with expected issue lists
-- optional PR branch helper packaging
+Status: landed.
+
+- public Pages entrypoint now loads AppV21 with only base styles plus `v21.css`
+- compact hero and promotion digest badge
+- denser metric strip for pack, cards, validation, and gallery count
+- fuller overview grid with validation, manifest, route graph, and fixture checks
+- visible fixture loading and pass/fail states
+- gallery, review, editor, and JSON tools kept in one current standalone studio shell
+- old version panels remain available in source history but are not rendered by the public app
+
+## v0.9.1 — next focus
+
+- improve route graph visuals with better arrows and node grouping
+- add compact playtest preview back into the unified shell
+- add keyboard-friendly editor controls
+- add “recently loaded packs” list
+- improve mobile spacing after field testing
