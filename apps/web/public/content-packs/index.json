@@ -1,0 +1,11 @@
+{
+  "schema": "porchquest.reviewed_pack_index.v1",
+  "packs": [
+    {
+      "id": "blackwood-starter",
+      "title": "Lanterns Under Blackwood Hill",
+      "summary": "Reviewed starter route pack for Campaign Studio.",
+      "path": "content-packs/blackwood-starter.route-pack.json"
+    }
+  ]
+}
