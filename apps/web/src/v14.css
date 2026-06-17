@@ -1,0 +1,49 @@
+.studio-v14 .route-graph {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+.studio-v14 .route-node {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  display: grid;
+  gap: 0.35rem;
+}
+
+.studio-v14 .route-node span,
+.studio-v14 .route-node small,
+.studio-v14 .route-node em {
+  opacity: 0.8;
+}
+
+.field-badge {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.field-badge.ok {
+  opacity: 0.65;
+}
+
+.field-badge.warn {
+  opacity: 1;
+  background: rgba(255, 226, 145, 0.12);
+}
+
+.studio-v14 .play-log li span {
+  display: block;
+  opacity: 0.78;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 760px) {
+  .studio-v14 .route-graph {
+    grid-template-columns: 1fr;
+  }
+}
