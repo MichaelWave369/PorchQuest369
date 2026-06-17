@@ -1,0 +1,82 @@
+{
+  "schema": "porchquest.route_pack.v1",
+  "id": "porch-market-day",
+  "title": "Porch Market Day",
+  "summary": "A gentle reviewed creator pack focused on trading clues, meeting helpers, and testing reward flow.",
+  "quests": [
+    { "id": "q_market_1", "title": "Open the porch market", "max_progress": 4 },
+    { "id": "q_market_2", "title": "Find three fair trades", "max_progress": 3 }
+  ],
+  "scenes": [
+    {
+      "id": "market_gate",
+      "act": "I",
+      "title": "Market Gate",
+      "skill": "perception",
+      "dc": 11,
+      "quest_id": "q_market_1",
+      "reward": "gate token",
+      "text": "A quiet bell marks the start of the porch market. A sign asks each visitor to bring one kind story."
+    },
+    {
+      "id": "button_blanket",
+      "act": "I",
+      "title": "Button Blanket",
+      "skill": "insight",
+      "dc": 12,
+      "quest_id": "q_market_2",
+      "reward": "blue button clue",
+      "text": "A blanket of buttons is sorted by memory. One blue button points toward a helper who needs a fair trade."
+    },
+    {
+      "id": "tea_table",
+      "act": "II",
+      "title": "Tea Table Ledger",
+      "skill": "history",
+      "dc": 13,
+      "quest_id": "q_market_1",
+      "reward": "ledger mark",
+      "text": "A tea table holds a small ledger. The ink only settles when a trade leaves both sides lighter."
+    }
+  ],
+  "npcs": [
+    {
+      "id": "mara_penny",
+      "title": "Mara Penny",
+      "role": "Market Keeper",
+      "quest_id": "q_market_1",
+      "clue": "Mara says the market opens when the bell, ledger, and blanket agree."
+    },
+    {
+      "id": "tuck_thread",
+      "title": "Tuck Thread",
+      "role": "Button Sorter",
+      "quest_id": "q_market_2",
+      "clue": "Tuck knows which trade is fair, but only if the player asks with patience."
+    }
+  ],
+  "rewards": [
+    {
+      "id": "fair_trade_token",
+      "title": "Fair Trade Token",
+      "text": "Gain a token for a trade that helped both sides.",
+      "items": ["fair trade token"],
+      "hp": 0,
+      "quest_id": "q_market_2",
+      "clue": "The token points back to the market bell.",
+      "add": ["inspired"],
+      "clear": []
+    },
+    {
+      "id": "warm_cup",
+      "title": "Warm Cup",
+      "text": "Restore 1 HP and clear tired.",
+      "items": ["warm cup"],
+      "hp": 1,
+      "quest_id": "",
+      "clue": "",
+      "add": [],
+      "clear": ["tired"]
+    }
+  ]
+}
