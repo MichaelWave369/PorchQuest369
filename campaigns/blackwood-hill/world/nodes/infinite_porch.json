@@ -1,0 +1,14 @@
+{
+  "id": "infinite_porch",
+  "type": "threshold",
+  "title": "The Infinite Porch",
+  "tags": [
+    "safe-start",
+    "threshold"
+  ],
+  "summary": "A porch between ordinary life and the lantern road.",
+  "facts": [
+    "The porch appears during rain.",
+    "One key is missing from the porch key ring."
+  ]
+}
