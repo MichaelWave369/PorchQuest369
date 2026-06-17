@@ -5,13 +5,22 @@
       "id": "blackwood-starter",
       "title": "Lanterns Under Blackwood Hill",
       "summary": "Reviewed starter route pack for Campaign Studio.",
-      "path": "content-packs/blackwood-starter.route-pack.json"
+      "path": "content-packs/blackwood-starter.route-pack.json",
+      "tags": ["starter", "hill", "balanced"]
     },
     {
       "id": "porch-market-day",
       "title": "Porch Market Day",
       "summary": "Reviewed market route pack for testing multi-pack import and fair-trade rewards.",
-      "path": "content-packs/porch-market-day.route-pack.json"
+      "path": "content-packs/porch-market-day.route-pack.json",
+      "tags": ["market", "social", "rewards"]
+    },
+    {
+      "id": "porch-rain-archive",
+      "title": "Porch Rain Archive",
+      "summary": "Reviewed archive route pack for testing route edges, filtered gallery search, and approval receipts.",
+      "path": "content-packs/porch-rain-archive.route-pack.json",
+      "tags": ["archive", "route", "review"]
     }
   ]
 }
