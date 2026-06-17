@@ -27,7 +27,7 @@ Status: landed.
 
 ## v0.3 — AI DM adapter
 
-Status: first pass landed.
+Status: landed and hardened.
 
 - server-side OpenAI-compatible adapter
 - backend DM status endpoint
@@ -35,17 +35,31 @@ Status: first pass landed.
 - browser DM settings panel
 - optional custom browser endpoint contract
 - no model keys in the public Pages app
-- docs for AI adapter setup and response shape
+- stronger model output validator
+- world_patch JSON conversion into the visible canon queue
+- endpoint test button in the DM Engine panel
+- clearer fallback receipts when an adapter fails
+
+## v0.4 — tabletop feel pass
+
+Status: first pass landed.
+
+- encounter cards with scene, stakes, skill DC, reward, and optional canon proposal
+- usable inventory actions
+- quest progress and clue triggers
+- browser save migration to v3
+- v0.4 gameplay docs
 
 Next hardening pass:
 
-- stronger model output validator
-- better conversion from generated world_patch JSON into the visible canon queue
-- endpoint test button in the DM Engine panel
-- clearer error receipts when an adapter fails
-- sample local model recipe
+- scene deck / room deck
+- NPC cards
+- rest/camp action
+- condition tags
+- simple win states for the Blackwood Hill starter adventure
+- backend parity for encounter and inventory endpoints
 
-## v0.4 — campaign studio
+## v0.5 — campaign studio
 
 - world node editor
 - NPC editor
@@ -54,7 +68,7 @@ Next hardening pass:
 - export/import quest packs
 - campaign seed selector
 
-## v0.5 — deeper character builder
+## v0.6 — deeper character builder
 
 - point buy / standard array
 - background packages
@@ -63,7 +77,7 @@ Next hardening pass:
 - simple equipment kits
 - level-up receipts
 
-## v0.6 — multiplayer table mode
+## v0.7 — multiplayer table mode
 
 - local co-op session
 - multiple character sheets
