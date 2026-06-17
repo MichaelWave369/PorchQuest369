@@ -1,0 +1,29 @@
+{
+  "schema": "porchquest.route_pack.v1",
+  "id": "Invalid Pack Id With Spaces",
+  "title": "Fixture Invalid Pack",
+  "summary": "Intentionally invalid pack for validation fixture tests.",
+  "quests": [],
+  "scenes": [
+    {
+      "id": "s1",
+      "title": "Missing Body",
+      "text": "",
+      "quest_id": "missing-quest"
+    },
+    {
+      "id": "s1",
+      "title": "Duplicate Scene",
+      "text": "This duplicate ID should be flagged."
+    }
+  ],
+  "npcs": [
+    { "id": "n1", "name": "Silent Helper", "clue": "" }
+  ],
+  "rewards": [
+    { "id": "r1", "title": "Empty Reward", "text": "" }
+  ],
+  "edges": [
+    { "from": "s1", "to": "missing-scene", "label": "broken edge" }
+  ]
+}
