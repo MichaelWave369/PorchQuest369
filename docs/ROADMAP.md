@@ -174,7 +174,7 @@ Status: landed and hardened through v0.9.4.
 
 ## v1.0 — player mode
 
-Status: landed and hardened through v1.0.4.
+Status: landed and hardened through v1.0.6.
 
 - public page defaults to `Play Adventure` instead of Creator Studio
 - character selection with four presets
@@ -207,12 +207,16 @@ Status: landed and hardened through v1.0.4.
 - v1.0.4 Last table note panel mirrors the newest receipt entry
 - v1.0.4 missing helper or reward cards can mark turn steps complete with receipt notes
 - v1.0.4 export feedback stores the most recent downloaded receipt metadata
+- v1.0.5 enriched Blackwood starter content with warmer scene text, helper voice, reward reveals, and authored route edges
+- v1.0.6 runtime feel layer with Mood / Mystery / Objective / Hero Lens strip
+- v1.0.6 warmer roll-result narration for strong success, success, partial success, and complication
+- v1.0.6 helper, reward, route transition, and ending receipt narration helpers
 
-## v1.0.5 — next focus
+## v1.0.7 — next focus
 
-- improve scene outcome copy for success, partial success, and complication
 - add a route ending screen
 - add a small dice roll animation
 - add save/resume run controls
 - add optional character naming
 - polish mobile player layout
+- add an adventure journal view separate from raw receipts
