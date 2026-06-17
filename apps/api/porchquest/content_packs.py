@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
 ROOT = Path(__file__).resolve().parents[3]
 PACK_DIR = ROOT / "content-packs"
+WRITE_ENV = "PORCHQUEST_ALLOW_PACK_WRITES"
 
 
 def _safe_id(value: str) -> str:
@@ -26,6 +28,18 @@ def _read_pack(path: Path) -> Dict[str, Any]:
     return data
 
 
+def _write_enabled() -> bool:
+    return os.getenv(WRITE_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def write_gate_status() -> Dict[str, Any]:
+    return {
+        "enabled": _write_enabled(),
+        "env": WRITE_ENV,
+        "message": "Reviewed pack writes require PORCHQUEST_ALLOW_PACK_WRITES=1."
+    }
+
+
 def list_route_packs() -> Dict[str, Any]:
     packs = []
     for path in _pack_files():
@@ -39,7 +53,7 @@ def list_route_packs() -> Dict[str, Any]:
             })
         except Exception:
             continue
-    return {"schema": "porchquest.reviewed_pack_index.v1", "packs": packs}
+    return {"schema": "porchquest.reviewed_pack_index.v1", "write_gate": write_gate_status(), "packs": packs}
 
 
 def load_route_pack(pack_id: str) -> Dict[str, Any]:
@@ -53,6 +67,8 @@ def load_route_pack(pack_id: str) -> Dict[str, Any]:
 
 
 def save_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
+    if not _write_enabled():
+        raise PermissionError("Route pack writes are disabled. Set PORCHQUEST_ALLOW_PACK_WRITES=1 for trusted local/backend editing.")
     if not isinstance(pack, dict):
         raise ValueError("Route pack payload must be an object.")
     safe_id = _safe_id(pack_id or str(pack.get("id") or "route-pack"))
@@ -61,7 +77,7 @@ def save_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
     data["id"] = safe_id
     data.setdefault("title", safe_id.replace("-", " ").replace("_", " ").title())
     data.setdefault("summary", "Saved route pack.")
-    for key in ("quests", "scenes", "npcs", "rewards"):
+    for key in ("quests", "scenes", "npcs", "rewards", "edges"):
         if not isinstance(data.get(key), list):
             data[key] = []
     PACK_DIR.mkdir(parents=True, exist_ok=True)
@@ -69,4 +85,4 @@ def save_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
     with path.open("w", encoding="utf-8") as handle:
         json.dump(data, handle, indent=2, ensure_ascii=False)
         handle.write("\n")
-    return {"ok": True, "id": safe_id, "path": f"content-packs/{path.name}", "pack": data}
+    return {"ok": True, "id": safe_id, "path": f"content-packs/{path.name}", "write_gate": write_gate_status(), "pack": data}
