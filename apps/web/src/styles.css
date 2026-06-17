@@ -44,6 +44,7 @@ h1 { font-size: clamp(42px, 8vw, 88px); margin: 0; line-height: 0.9; }
 .list li strong { display: block; color: #95d5ff; margin-bottom: 4px; }
 .list li small { display: block; color: #9ea8bb; margin-top: 6px; line-height: 1.35; }
 .roll-result { color: #f7d7a1; line-height: 1.4; }
+.test-result { color: #95d5ff; line-height: 1.4; margin: 10px 0 0; font-size: 13px; }
 .muted { color: #a8b0c2; line-height: 1.45; margin: 8px 0 0; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .stack label { display: flex; flex-direction: column; gap: 6px; color: #c7bdad; font-size: 13px; }
@@ -54,6 +55,7 @@ h1 { font-size: clamp(42px, 8vw, 88px); margin: 0; line-height: 0.9; }
 .file-button { display: inline-flex; justify-content: center; align-items: center; }
 .file-button input { display: none; }
 .patches li { border: 1px solid #354569; }
+.patches li span { display: block; line-height: 1.35; }
 .engine-status { display: flex; justify-content: space-between; gap: 8px; align-items: center; margin: 0 0 12px; padding: 10px; border-radius: 14px; background: rgba(16, 23, 41, .9); border: 1px solid #354569; }
 .engine-status strong { color: #95d5ff; }
 .engine-status span { border-radius: 999px; padding: 4px 8px; background: rgba(143, 209, 255, .12); color: #f7d7a1; font-size: 12px; white-space: nowrap; }
