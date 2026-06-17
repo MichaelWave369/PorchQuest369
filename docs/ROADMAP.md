@@ -174,7 +174,7 @@ Status: landed and hardened through v0.9.4.
 
 ## v1.0 — player mode
 
-Status: landed and hardened through v1.0.1.
+Status: landed and hardened through v1.0.2.
 
 - public page defaults to `Play Adventure` instead of Creator Studio
 - character selection with four presets
@@ -191,8 +191,13 @@ Status: landed and hardened through v1.0.1.
 - v1.0.1 `Change Pack / Hero` action from active runs
 - v1.0.1 reviewed pack loading clears stale player runs
 - v1.0.1 fallback route choices keep play moving when a scene has no authored outgoing edge
+- v1.0.2 selected pack and hero summary before start
+- v1.0.2 route health notice for authored, fallback, and missing route graphs
+- v1.0.2 Load Fresh Starter action to clear stale local pack state
+- v1.0.2 first-scene At the Table intro panel
+- v1.0.2 clearer fallback route messaging during play
 
-## v1.0.2 — next focus
+## v1.0.3 — next focus
 
 - improve scene outcome copy for success, partial success, and complication
 - add a route ending screen
