@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8787';
 const STATIC_PLAY = import.meta.env.VITE_STATIC_PLAY === '1';
-const STORAGE_KEY = 'porchquest369.browserCampaign.v2';
-const LEGACY_STORAGE_KEY = 'porchquest369.browserCampaign.v1';
+const STORAGE_KEY = 'porchquest369.browserCampaign.v3';
+const LEGACY_STORAGE_KEYS = ['porchquest369.browserCampaign.v2', 'porchquest369.browserCampaign.v1'];
 const DM_SETTINGS_KEY = 'porchquest369.dmSettings.v1';
 
 const CLASS_PRESETS = {
@@ -41,6 +41,86 @@ const CLASS_PRESETS = {
   }
 };
 
+const ENCOUNTER_CARDS = [
+  {
+    id: 'blue_moth_swarm',
+    title: 'Blue-Fire Moth Swarm',
+    scene: 'A spiral of blue-fire moths forms a living arrow above the wet path.',
+    danger: 'If startled, the swarm marks you with cold sparks that draw hill-watchers.',
+    skill: 'survival',
+    dc: 12,
+    reward: 'moth-marked trail clue',
+    patch: { type: 'upsert_node', node: { id: 'blue_fire_moth', title: 'Blue-Fire Moth', summary: 'A tiny watcher with flame-blue wings that appears when stealth changes the path.', type: 'creature', tags: ['encounter', 'lantern'] }, reason: 'Encounter card revealed the blue-fire moths.' }
+  },
+  {
+    id: 'lying_door',
+    title: 'The Lying Door',
+    scene: 'A freestanding door waits between two black pines. Its knob is warm as a living hand.',
+    danger: 'It asks one question and remembers the answer forever.',
+    skill: 'persuasion',
+    dc: 13,
+    reward: 'door-memory clue',
+    patch: { type: 'append_fact', node_id: 'blackwood_hill', facts: ['A freestanding door on the hill tests answers and remembers lies.'], reason: 'Encounter card revealed how hill doors behave.' }
+  },
+  {
+    id: 'porch_key_echo',
+    title: 'Porch Key Echo',
+    scene: 'Something under the boards knocks in the exact rhythm of your heartbeat.',
+    danger: 'The echo can pull a memory loose if you answer too quickly.',
+    skill: 'perception',
+    dc: 12,
+    reward: 'brass key tooth clue',
+    patch: { type: 'upsert_node', node: { id: 'brass_key_tooth', title: 'Brass Key Tooth', summary: 'A broken piece of a missing porch key. It points toward unresolved truths.', type: 'relic', tags: ['key', 'porch'] }, reason: 'Encounter card surfaced the key mystery.' }
+  },
+  {
+    id: 'rootbound_choir',
+    title: 'Rootbound Choir',
+    scene: 'Roots hum below the mud like a choir trying not to wake the hill.',
+    danger: 'A wrong step twists the trail back to where fear began.',
+    skill: 'arcana',
+    dc: 14,
+    reward: 'rootbound harmony clue',
+    patch: { type: 'upsert_node', node: { id: 'rootbound_choir', title: 'Rootbound Choir', summary: 'Forest-root voices guarding buried promises beneath Blackwood Hill.', type: 'faction', tags: ['roots', 'hill'] }, reason: 'Encounter card introduced the Rootbound Choir.' }
+  }
+];
+
+const ITEM_ACTIONS = [
+  {
+    match: /waterskin|rations|cloak/,
+    title: 'Ground and recover',
+    text: 'You pause, breathe, and take care of the body before the story asks for more. HP +1.',
+    update: { hp_delta: 1, flags: { rested_once: true } }
+  },
+  {
+    match: /lantern|stub|shield/,
+    title: 'Raise the lantern light',
+    text: 'The blue glow bends toward hidden tracks. A clue wants to become canon.',
+    update: { flags: { lantern_used: true }, quest_updates: [{ id: 'q_main_1', progress: 1, clue: 'Lantern light reveals tracks tied to the missing porch key.' }] },
+    patch: { type: 'upsert_node', node: { id: 'blue_lanterns', title: 'Blue Lanterns', summary: 'Cold-burning lanterns that reveal tracks only after a risky choice.', type: 'signal', tags: ['lantern', 'clue'] }, reason: 'Inventory action used lantern light.' }
+  },
+  {
+    match: /key|badge/,
+    title: 'Check the threshold token',
+    text: 'The token hums at the edge of the porch. Something recognizes you as allowed, but not yet trusted.',
+    update: { flags: { threshold_token_checked: true }, quest_updates: [{ id: 'q_main_1', progress: 1, clue: 'The threshold token reacts near the porch boards.' }] },
+    patch: { type: 'append_fact', node_id: 'infinite_porch', facts: ['Threshold tokens hum when the missing porch key is close.'], reason: 'Inventory action tested a porch token.' }
+  },
+  {
+    match: /journal|quill|ribbon|lute/,
+    title: 'Record a memory receipt',
+    text: 'You turn experience into a record. The story steadies because it has a witness.',
+    update: { flags: { memory_receipt_written: true }, quest_updates: [{ id: 'q_mystery_1', progress: 1, clue: 'Writing memories down protects them from the hill.' }] },
+    patch: { type: 'upsert_node', node: { id: 'memory_receipts', title: 'Memory Receipts', summary: 'Written records that keep the hill from rewriting what truly happened.', type: 'tool', tags: ['memory', 'ledger'] }, reason: 'Inventory action created a memory receipt.' }
+  },
+  {
+    match: /rope|chalk|wire|shortbow/,
+    title: 'Prepare the trail kit',
+    text: 'You mark the path and prepare for trouble. The next trail or encounter roll gets a little safer.',
+    update: { flags: { trail_kit_ready: true }, quest_updates: [{ id: 'q_side_1', progress: 1, clue: 'Trail preparation reveals signs of the missing apprentice.' }] },
+    patch: { type: 'upsert_node', node: { id: 'safe_trail_marks', title: 'Safe Trail Marks', summary: 'Chalk, rope, and careful signs that stop Blackwood Hill from folding the path shut.', type: 'trail', tags: ['survival', 'safety'] }, reason: 'Inventory action prepared the trail.' }
+  }
+];
+
 const fallbackCampaign = {
   id: 'browser-demo',
   campaign_name: 'Lanterns Under Blackwood Hill',
@@ -53,9 +133,9 @@ const fallbackCampaign = {
     inventory: ['weathered cloak', 'porch key ring', 'lantern stub', 'waterskin', '10 gp']
   },
   quests: [
-    { id: 'q_main_1', title: 'Find the missing porch key before midnight', type: 'main', status: 'open' },
-    { id: 'q_side_1', title: "Rescue the lantern-maker's apprentice", type: 'side', status: 'open' },
-    { id: 'q_mystery_1', title: 'Learn why every door on Blackwood Hill remembers lies', type: 'mystery', status: 'open' }
+    { id: 'q_main_1', title: 'Find the missing porch key before midnight', type: 'main', status: 'open', progress: 0, max_progress: 3, clues: [] },
+    { id: 'q_side_1', title: "Rescue the lantern-maker's apprentice", type: 'side', status: 'open', progress: 0, max_progress: 3, clues: [] },
+    { id: 'q_mystery_1', title: 'Learn why every door on Blackwood Hill remembers lies', type: 'mystery', status: 'open', progress: 0, max_progress: 3, clues: [] }
   ],
   world: {
     nodes: {
@@ -66,6 +146,8 @@ const fallbackCampaign = {
     edges: []
   },
   flags: {},
+  active_encounter: null,
+  encounter_log: [],
   pending_patches: [],
   pending_world_patches: [],
   log: [{ role: 'dm', content: "Rain taps the roof of a porch that should not exist. Beyond the steps, Blackwood Hill glows with blue lanterns between the trees.\n\nA) Step toward Blackwood Hill.\nB) Question Old Joss.\nC) Inspect the porch.", ts: '' }]
@@ -95,6 +177,21 @@ function stablePatchId(prefix, value) {
   return `${prefix}_${raw || 'patch'}`;
 }
 
+function normalizeQuest(raw) {
+  const progress = Number.isFinite(Number(raw?.progress)) ? Math.max(0, Number(raw.progress)) : 0;
+  const max = Number.isFinite(Number(raw?.max_progress)) ? Math.max(1, Number(raw.max_progress)) : 3;
+  const status = safeText(raw?.status, 'open');
+  return {
+    id: safeText(raw?.id, stablePatchId('quest', raw?.title || 'quest')).slice(0, 80),
+    title: safeText(raw?.title, 'Untitled quest').slice(0, 160),
+    type: safeText(raw?.type, 'side').slice(0, 40),
+    status: progress >= max && status === 'open' ? 'ready' : status,
+    progress: Math.min(progress, max),
+    max_progress: max,
+    clues: Array.isArray(raw?.clues) ? raw.clues.map(String).slice(0, 8) : []
+  };
+}
+
 function normalizePendingPatch(raw, index = 0) {
   if (!raw || typeof raw !== 'object') return null;
 
@@ -107,12 +204,7 @@ function normalizePendingPatch(raw, index = 0) {
       tags: Array.isArray(raw.node.tags) ? raw.node.tags.map(String) : [],
       facts: Array.isArray(raw.node.facts) ? raw.node.facts.map(String) : []
     };
-    return {
-      id: safeText(raw.id, stablePatchId('upsert', node.id)),
-      type: 'upsert_node',
-      node,
-      reason: safeText(raw.reason, 'DM proposed a new world node.')
-    };
+    return { id: safeText(raw.id, stablePatchId('upsert', node.id)), type: 'upsert_node', node, reason: safeText(raw.reason, 'DM proposed a new world node.') };
   }
 
   if (raw.type === 'append_fact' && raw.node_id) {
@@ -129,20 +221,9 @@ function normalizePendingPatch(raw, index = 0) {
   }
 
   if (raw.type === 'new_edge' && raw.edge) {
-    const edge = {
-      from: safeText(raw.edge.from),
-      to: safeText(raw.edge.to),
-      rel: safeText(raw.edge.rel, 'related')
-    };
+    const edge = { from: safeText(raw.edge.from), to: safeText(raw.edge.to), rel: safeText(raw.edge.rel, 'related') };
     if (!edge.from || !edge.to) return null;
-    return {
-      id: safeText(raw.id, stablePatchId('edge', `${edge.from}_${edge.rel}_${edge.to}`)),
-      type: 'new_edge',
-      edge,
-      title: `${edge.from} → ${edge.to}`,
-      summary: edge.rel,
-      reason: safeText(raw.reason, 'DM proposed a world relationship.')
-    };
+    return { id: safeText(raw.id, stablePatchId('edge', `${edge.from}_${edge.rel}_${edge.to}`)), type: 'new_edge', edge, title: `${edge.from} → ${edge.to}`, summary: edge.rel, reason: safeText(raw.reason, 'DM proposed a world relationship.') };
   }
 
   return null;
@@ -160,37 +241,20 @@ function worldPatchToPendingPatches(raw) {
 
   const upserts = Array.isArray(patch.upsert_nodes) ? patch.upsert_nodes : patch.upsert_nodes ? [patch.upsert_nodes] : [];
   upserts.forEach((node, index) => {
-    const normalized = normalizePendingPatch({
-      id: stablePatchId('upsert', node?.id || node?.title || index),
-      type: 'upsert_node',
-      node,
-      reason: safeText(raw.reason, 'AI DM proposed this world node.')
-    }, index);
+    const normalized = normalizePendingPatch({ id: stablePatchId('upsert', node?.id || node?.title || index), type: 'upsert_node', node, reason: safeText(raw.reason, 'AI DM proposed this world node.') }, index);
     if (normalized) pending.push(normalized);
   });
 
   const appends = Array.isArray(patch.append_facts) ? patch.append_facts : patch.append_facts ? [patch.append_facts] : [];
   appends.forEach((item, index) => {
     const facts = Array.isArray(item?.facts) ? item.facts : item?.facts ? [item.facts] : [];
-    const normalized = normalizePendingPatch({
-      id: stablePatchId('fact', `${item?.id || item?.node_id || index}_${facts.join('_')}`),
-      type: 'append_fact',
-      node_id: item?.id || item?.node_id,
-      facts,
-      title: `Add fact to ${item?.id || item?.node_id || 'node'}`,
-      reason: safeText(raw.reason, 'AI DM proposed this fact update.')
-    }, index);
+    const normalized = normalizePendingPatch({ id: stablePatchId('fact', `${item?.id || item?.node_id || index}_${facts.join('_')}`), type: 'append_fact', node_id: item?.id || item?.node_id, facts, title: `Add fact to ${item?.id || item?.node_id || 'node'}`, reason: safeText(raw.reason, 'AI DM proposed this fact update.') }, index);
     if (normalized) pending.push(normalized);
   });
 
   const edges = Array.isArray(patch.new_edges) ? patch.new_edges : patch.new_edges ? [patch.new_edges] : [];
   edges.forEach((edge, index) => {
-    const normalized = normalizePendingPatch({
-      id: stablePatchId('edge', `${edge?.from || index}_${edge?.rel || 'related'}_${edge?.to || index}`),
-      type: 'new_edge',
-      edge,
-      reason: safeText(raw.reason, 'AI DM proposed this world edge.')
-    }, index);
+    const normalized = normalizePendingPatch({ id: stablePatchId('edge', `${edge?.from || index}_${edge?.rel || 'related'}_${edge?.to || index}`), type: 'new_edge', edge, reason: safeText(raw.reason, 'AI DM proposed this world edge.') }, index);
     if (normalized) pending.push(normalized);
   });
 
@@ -208,6 +272,23 @@ function dedupePatches(patches) {
   });
 }
 
+function normalizeEncounter(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const base = ENCOUNTER_CARDS.find((card) => card.id === raw.id) || raw;
+  return {
+    ...base,
+    ...raw,
+    id: safeText(raw.id, base.id || `encounter_${Date.now()}`),
+    title: safeText(raw.title, base.title || 'Encounter'),
+    scene: safeText(raw.scene, base.scene || ''),
+    danger: safeText(raw.danger, base.danger || ''),
+    skill: safeText(raw.skill, base.skill || 'perception'),
+    dc: Number(raw.dc || base.dc || 12),
+    reward: safeText(raw.reward, base.reward || 'clue'),
+    drawn_at: raw.drawn_at || new Date().toISOString()
+  };
+}
+
 function normalizeCampaign(raw) {
   const base = cloneCampaign();
   const campaign = { ...base, ...(raw || {}) };
@@ -215,11 +296,13 @@ function normalizeCampaign(raw) {
   campaign.player.stats = { ...base.player.stats, ...(raw?.player?.stats || {}) };
   campaign.player.skills = { ...base.player.skills, ...(raw?.player?.skills || {}) };
   campaign.player.inventory = raw?.player?.inventory || campaign.player.inventory || [];
-  campaign.quests = raw?.quests || campaign.quests || [];
+  campaign.quests = (raw?.quests || campaign.quests || []).map(normalizeQuest);
   campaign.world = raw?.world || campaign.world || { nodes: {}, edges: [] };
   campaign.world.nodes = campaign.world.nodes || {};
   campaign.world.edges = campaign.world.edges || [];
   campaign.flags = raw?.flags || campaign.flags || {};
+  campaign.active_encounter = normalizeEncounter(raw?.active_encounter || null);
+  campaign.encounter_log = Array.isArray(raw?.encounter_log) ? raw.encounter_log.slice(0, 50) : [];
 
   const pending = [
     ...(raw?.pending_patches || []),
@@ -234,7 +317,7 @@ function normalizeCampaign(raw) {
 
 function loadBrowserCampaign() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || LEGACY_STORAGE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
     if (raw) return normalizeCampaign(JSON.parse(raw));
   } catch (err) {
     console.warn('Could not load browser campaign', err);
@@ -274,27 +357,19 @@ function rollCheck({ expr = '1d20+2', mod = 2, dc = 12, label = 'Quick Check' } 
   let outcome = total >= dc ? 'success' : 'failure';
   if (raw === 20) outcome = 'critical success';
   if (raw === 1) outcome = 'critical failure';
-  return {
-    expr,
-    label,
-    raw,
-    mod,
-    dc,
-    total,
-    outcome,
-    detail: `${raw} + ${mod} = ${total} vs DC ${dc}`
-  };
+  return { expr, label, raw, mod, dc, total, outcome, detail: `${raw} + ${mod} = ${total} vs DC ${dc}` };
 }
 
 function actionProfile(action, campaign) {
   const lower = action.toLowerCase();
   const skills = campaign?.player?.skills || {};
-  if (/sneak|hide|quiet|shadow/.test(lower)) return { skill: 'stealth', mod: skills.stealth || 0, dc: 13, label: 'Stealth Check' };
-  if (/inspect|look|search|listen|clue|lantern|door|porch/.test(lower)) return { skill: 'perception', mod: skills.perception || 0, dc: 12, label: 'Perception Check' };
+  const prepared = campaign?.flags?.trail_kit_ready ? 1 : 0;
+  if (/sneak|hide|quiet|shadow/.test(lower)) return { skill: 'stealth', mod: (skills.stealth || 0) + prepared, dc: 13, label: 'Stealth Check' };
+  if (/inspect|look|search|listen|clue|lantern|door|porch/.test(lower)) return { skill: 'perception', mod: (skills.perception || 0) + prepared, dc: 12, label: 'Perception Check' };
   if (/talk|ask|question|persuade|convince|joss/.test(lower)) return { skill: 'persuasion', mod: skills.persuasion || 0, dc: 12, label: 'Persuasion Check' };
-  if (/rune|spell|magic|arcane|sigil|curse/.test(lower)) return { skill: 'arcana', mod: skills.arcana || 0, dc: 14, label: 'Arcana Check' };
-  if (/track|forest|trail|hill|survive|camp/.test(lower)) return { skill: 'survival', mod: skills.survival || 0, dc: 12, label: 'Survival Check' };
-  return { skill: 'wisdom', mod: 2, dc: 12, label: 'Adventurer Check' };
+  if (/rune|spell|magic|arcane|sigil|curse|root|choir/.test(lower)) return { skill: 'arcana', mod: skills.arcana || 0, dc: 14, label: 'Arcana Check' };
+  if (/track|forest|trail|hill|survive|camp/.test(lower)) return { skill: 'survival', mod: (skills.survival || 0) + prepared, dc: 12, label: 'Survival Check' };
+  return { skill: 'wisdom', mod: 2 + prepared, dc: 12, label: 'Adventurer Check' };
 }
 
 function localNarration(action, roll) {
@@ -336,12 +411,7 @@ function localNarration(action, roll) {
 }
 
 function nodePatch(id, title, summary, reason) {
-  return {
-    id: `${id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`,
-    type: 'upsert_node',
-    node: { id, title, summary },
-    reason
-  };
+  return { id: `${id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`, type: 'upsert_node', node: { id, title, summary }, reason };
 }
 
 function proposeWorldPatches(action, world = {}) {
@@ -349,18 +419,10 @@ function proposeWorldPatches(action, world = {}) {
   const nodes = world.nodes || {};
   const patches = [];
 
-  if (/lantern/.test(lower) && !nodes.blue_lanterns) {
-    patches.push(nodePatch('blue_lanterns', 'Blue Lanterns', 'Cold-burning lanterns that reveal tracks only after a risky choice.', 'The player investigated lantern signs.'));
-  }
-  if (/key|brass|porch/.test(lower) && !nodes.brass_key_tooth) {
-    patches.push(nodePatch('brass_key_tooth', 'Brass Key Tooth', 'A broken piece of a missing porch key. It points toward unresolved truths.', 'The player searched the porch/key mystery.'));
-  }
-  if (/hill|forest|trail/.test(lower) && !nodes.left_trail) {
-    patches.push(nodePatch('left_trail', 'The Left Trail', 'A root-laced path Old Joss says to take when the hill asks your name.', 'The player pushed toward Blackwood Hill.'));
-  }
-  if (/moth|fire|wing/.test(lower) && !nodes.blue_fire_moth) {
-    patches.push(nodePatch('blue_fire_moth', 'Blue-Fire Moth', 'A tiny watcher with flame-blue wings that appears when stealth changes the path.', 'The player invoked hidden/quiet movement.'));
-  }
+  if (/lantern/.test(lower) && !nodes.blue_lanterns) patches.push(nodePatch('blue_lanterns', 'Blue Lanterns', 'Cold-burning lanterns that reveal tracks only after a risky choice.', 'The player investigated lantern signs.'));
+  if (/key|brass|porch/.test(lower) && !nodes.brass_key_tooth) patches.push(nodePatch('brass_key_tooth', 'Brass Key Tooth', 'A broken piece of a missing porch key. It points toward unresolved truths.', 'The player searched the porch/key mystery.'));
+  if (/hill|forest|trail/.test(lower) && !nodes.left_trail) patches.push(nodePatch('left_trail', 'The Left Trail', 'A root-laced path Old Joss says to take when the hill asks your name.', 'The player pushed toward Blackwood Hill.'));
+  if (/moth|fire|wing/.test(lower) && !nodes.blue_fire_moth) patches.push(nodePatch('blue_fire_moth', 'Blue-Fire Moth', 'A tiny watcher with flame-blue wings that appears when stealth changes the path.', 'The player invoked hidden/quiet movement.'));
 
   return patches;
 }
@@ -370,33 +432,61 @@ function applyPatch(world = {}, rawPatch) {
   if (!patch) return world;
   const next = { ...world, nodes: { ...(world.nodes || {}) }, edges: [...(world.edges || [])] };
 
-  if (patch.type === 'upsert_node') {
-    next.nodes[patch.node.id] = { ...(next.nodes[patch.node.id] || {}), ...patch.node };
-  }
-
+  if (patch.type === 'upsert_node') next.nodes[patch.node.id] = { ...(next.nodes[patch.node.id] || {}), ...patch.node };
   if (patch.type === 'append_fact' && patch.node_id) {
     const node = next.nodes[patch.node_id] || { id: patch.node_id, title: patch.node_id, summary: '' };
     const facts = new Set([...(node.facts || [])]);
     (patch.facts || []).forEach((fact) => fact && facts.add(String(fact)));
     next.nodes[patch.node_id] = { ...node, facts: [...facts] };
   }
-
   if (patch.type === 'new_edge' && patch.edge) {
     const key = `${patch.edge.from}|${patch.edge.rel}|${patch.edge.to}`;
     const existing = new Set(next.edges.map((edge) => `${edge.from}|${edge.rel}|${edge.to}`));
     if (!existing.has(key)) next.edges.push(patch.edge);
   }
-
   return next;
+}
+
+function mergeQuestUpdates(quests, updates = []) {
+  const next = [...(quests || [])].map(normalizeQuest);
+  updates.forEach((incoming) => {
+    if (!incoming?.id) return;
+    const idx = next.findIndex((q) => q.id === incoming.id);
+    const current = idx >= 0 ? next[idx] : normalizeQuest({ id: incoming.id, title: incoming.title || incoming.id, type: incoming.type || 'side' });
+    const clues = new Set([...(current.clues || [])]);
+    if (incoming.clue) clues.add(String(incoming.clue).slice(0, 160));
+    (incoming.clues || []).forEach((clue) => clues.add(String(clue).slice(0, 160)));
+    const progressDelta = Number.isFinite(Number(incoming.progress)) ? Number(incoming.progress) : 0;
+    const max = incoming.max_progress || current.max_progress || 3;
+    const merged = normalizeQuest({
+      ...current,
+      ...incoming,
+      progress: Math.min((current.progress || 0) + progressDelta, max),
+      max_progress: max,
+      clues: [...clues]
+    });
+    if (idx >= 0) next[idx] = merged;
+    else next.push(merged);
+  });
+  return next;
+}
+
+function questUpdatesForAction(action, roll, campaign) {
+  const lower = action.toLowerCase();
+  const success = roll?.outcome?.includes('success');
+  const updates = [];
+  if (/key|brass|porch/.test(lower) && success) updates.push({ id: 'q_main_1', progress: 1, clue: 'A key-sign responded to the porch boards.' });
+  if (/apprentice|lantern-maker|rescue|trail/.test(lower) && success) updates.push({ id: 'q_side_1', progress: 1, clue: 'A trail sign points toward the lantern-maker apprentice.' });
+  if (/door|lie|memory|remember|journal|receipt/.test(lower) && success) updates.push({ id: 'q_mystery_1', progress: 1, clue: 'The hill reacts differently when truth is recorded.' });
+  if (campaign?.flags?.lantern_used && /hill|trail|track/.test(lower) && success) updates.push({ id: 'q_main_1', progress: 1, clue: 'Lantern light and trail signs agree on one direction.' });
+  return updates;
 }
 
 function applyCampaignUpdate(campaign, update = {}) {
   const next = normalizeCampaign(campaign);
   if (!update || typeof update !== 'object') return next;
   if (typeof update.location === 'string' && update.location.trim()) next.location = update.location.trim();
-  if (typeof update.hp_delta === 'number') {
-    next.player.hp = Math.max(0, Math.min((next.player.hp || 0) + update.hp_delta, next.player.hp_max || next.player.hp || 0));
-  }
+  if (typeof update.hp_delta === 'number') next.player.hp = Math.max(0, Math.min((next.player.hp || 0) + update.hp_delta, next.player.hp_max || next.player.hp || 0));
   if (Array.isArray(update.add_items)) {
     const inv = new Set(next.player.inventory || []);
     update.add_items.slice(0, 20).forEach((item) => item && inv.add(String(item).slice(0, 80)));
@@ -406,22 +496,7 @@ function applyCampaignUpdate(campaign, update = {}) {
     const remove = new Set(update.remove_items.map(String));
     next.player.inventory = (next.player.inventory || []).filter((item) => !remove.has(String(item)));
   }
-  if (Array.isArray(update.quest_updates)) {
-    const quests = [...(next.quests || [])];
-    update.quest_updates.slice(0, 20).forEach((incoming) => {
-      if (!incoming?.id) return;
-      const clean = {
-        id: safeText(incoming.id).slice(0, 80),
-        title: safeText(incoming.title, incoming.id).slice(0, 140),
-        type: safeText(incoming.type, 'side').slice(0, 40),
-        status: safeText(incoming.status, 'open').slice(0, 40)
-      };
-      const idx = quests.findIndex((q) => q.id === clean.id);
-      if (idx >= 0) quests[idx] = { ...quests[idx], ...clean };
-      else quests.push(clean);
-    });
-    next.quests = quests;
-  }
+  if (Array.isArray(update.quest_updates)) next.quests = mergeQuestUpdates(next.quests, update.quest_updates.slice(0, 20));
   if (update.flags && typeof update.flags === 'object') next.flags = { ...(next.flags || {}), ...update.flags };
   return next;
 }
@@ -430,17 +505,16 @@ function resolveBrowserTurn(campaign, action) {
   const profile = actionProfile(action, campaign);
   const roll = rollCheck({ expr: `1d20+${profile.mod}`, mod: profile.mod, dc: profile.dc, label: profile.label });
   const patches = proposeWorldPatches(action, campaign.world);
+  const quest_updates = questUpdatesForAction(action, roll, campaign);
   const patchNote = patches.length ? `\n\nCanon proposals: ${patches.length} new world update${patches.length === 1 ? '' : 's'} waiting for your approval.` : '';
-  const dmText = `${localNarration(action, roll)}\n\nRoll: ${roll.detail} · ${roll.outcome}${patchNote}\n\nA) Press forward.\nB) Ask one careful question.\nC) Mark this clue in the ledger.`;
+  const questNote = quest_updates.length ? `\n\nQuest ledger: ${quest_updates.length} clue trigger${quest_updates.length === 1 ? '' : 's'} advanced.` : '';
+  const dmText = `${localNarration(action, roll)}\n\nRoll: ${roll.detail} · ${roll.outcome}${patchNote}${questNote}\n\nA) Press forward.\nB) Ask one careful question.\nC) Mark this clue in the ledger.`;
+  const updated = applyCampaignUpdate(campaign, { quest_updates, flags: campaign.flags?.trail_kit_ready ? { trail_kit_ready: false } : {} });
   const next = normalizeCampaign({
-    ...campaign,
-    turn: (campaign.turn || 0) + 1,
-    pending_patches: [...(campaign.pending_patches || []), ...patches],
-    log: [
-      ...(campaign.log || []),
-      { role: 'player', content: action, ts: new Date().toISOString() },
-      { role: 'dm', content: dmText, ts: new Date().toISOString() }
-    ]
+    ...updated,
+    turn: (updated.turn || 0) + 1,
+    pending_patches: [...(updated.pending_patches || []), ...patches],
+    log: [...(updated.log || []), { role: 'player', content: action, ts: new Date().toISOString() }, { role: 'dm', content: dmText, ts: new Date().toISOString() }]
   });
   saveBrowserCampaign(next);
   return { campaign: next, roll };
@@ -456,25 +530,17 @@ function normalizeRoll(raw, fallbackRoll) {
 
 function validateDmPayload(payload) {
   const warnings = [];
-  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-    return { ok: false, error: 'DM response must be a JSON object.', warnings };
-  }
-
-  if (payload.campaign && typeof payload.campaign !== 'object') {
-    return { ok: false, error: 'campaign must be an object when provided.', warnings };
-  }
-
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return { ok: false, error: 'DM response must be a JSON object.', warnings };
+  if (payload.campaign && typeof payload.campaign !== 'object') return { ok: false, error: 'campaign must be an object when provided.', warnings };
   if (!payload.campaign) {
     if (!payload.narrative && !payload.message) warnings.push('No narrative/message returned; browser narration will be used.');
     if (payload.update && typeof payload.update !== 'object') return { ok: false, error: 'update must be an object.' };
     if (payload.pending_patches && !Array.isArray(payload.pending_patches)) return { ok: false, error: 'pending_patches must be an array.' };
   }
-
   if (typeof payload.narrative === 'string' && payload.narrative.length > 5000) {
     payload = { ...payload, narrative: payload.narrative.slice(0, 5000) + '\n\n[Trimmed by PorchQuest369 guardrail.]' };
     warnings.push('Narrative was trimmed to 5000 characters.');
   }
-
   return { ok: true, payload, warnings };
 }
 
@@ -498,9 +564,7 @@ function mergeCustomTurnResult(campaign, action, rawPayload) {
     const normalized = normalizeCampaign(payload.campaign);
     const roll = normalizeRoll(payload.roll, fallbackRoll);
     const warningText = validation.warnings.length ? `\n\nDM warnings: ${validation.warnings.join(' ')}` : '';
-    if (warningText) {
-      normalized.log = [...(normalized.log || []), { role: 'dm', content: warningText.trim(), ts: new Date().toISOString() }];
-    }
+    if (warningText) normalized.log = [...(normalized.log || []), { role: 'dm', content: warningText.trim(), ts: new Date().toISOString() }];
     saveBrowserCampaign(normalized);
     return { campaign: normalized, roll, warnings: validation.warnings };
   }
@@ -515,14 +579,17 @@ function mergeCustomTurnResult(campaign, action, rawPayload) {
     ...base,
     turn: (base.turn || 0) + 1,
     pending_patches: [...(base.pending_patches || []), ...pending],
-    log: [
-      ...(base.log || []),
-      { role: 'player', content: action, ts: new Date().toISOString() },
-      { role: 'dm', content: `${narrative}${patchNote}${warningText}`, ts: new Date().toISOString() }
-    ]
+    log: [...(base.log || []), { role: 'player', content: action, ts: new Date().toISOString() }, { role: 'dm', content: `${narrative}${patchNote}${warningText}`, ts: new Date().toISOString() }]
   });
   saveBrowserCampaign(next);
   return { campaign: next, roll, warnings: validation.warnings };
+}
+
+function drawEncounter(campaign) {
+  const seen = new Set((campaign.encounter_log || []).slice(-4).map((entry) => entry.id));
+  const pool = ENCOUNTER_CARDS.filter((card) => !seen.has(card.id));
+  const card = pool.length ? pool[Math.floor(Math.random() * pool.length)] : ENCOUNTER_CARDS[Math.floor(Math.random() * ENCOUNTER_CARDS.length)];
+  return normalizeEncounter({ ...card, drawn_at: new Date().toISOString() });
 }
 
 export default function App({ icons }) {
@@ -538,10 +605,7 @@ export default function App({ icons }) {
   const [characterDraft, setCharacterDraft] = useState({ name: 'Mikey', class_name: 'Lantern-Seeker', background: 'Porch-Touched' });
 
   async function api(path, options = {}) {
-    const res = await fetch(`${API_BASE}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
-      ...options,
-    });
+    const res = await fetch(`${API_BASE}${path}`, { headers: { 'Content-Type': 'application/json' }, ...options });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   }
@@ -555,11 +619,7 @@ export default function App({ icons }) {
 
   async function refreshDmStatus() {
     if (STATIC_PLAY || !apiOnline) {
-      setDmBackend({
-        mode: dmSettings.mode === 'custom' ? 'custom_endpoint' : 'browser_oracle',
-        configured: dmSettings.mode === 'custom' && !!dmSettings.endpoint,
-        model: 'browser-local'
-      });
+      setDmBackend({ mode: dmSettings.mode === 'custom' ? 'custom_endpoint' : 'browser_oracle', configured: dmSettings.mode === 'custom' && !!dmSettings.endpoint, model: 'browser-local' });
       return;
     }
     try {
@@ -615,11 +675,7 @@ export default function App({ icons }) {
     const res = await fetch(dmSettings.endpoint.trim(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contract: testOnly ? 'porchquest369-browser-dm-v0.3-test' : 'porchquest369-browser-dm-v0.3',
-        campaign: normalizeCampaign(campaign || fallbackCampaign),
-        action: actionText
-      })
+      body: JSON.stringify({ contract: testOnly ? 'porchquest369-browser-dm-v0.4-test' : 'porchquest369-browser-dm-v0.4', campaign: normalizeCampaign(campaign || fallbackCampaign), action: actionText })
     });
     if (!res.ok) throw new Error(await res.text());
     const payload = await res.json();
@@ -630,12 +686,8 @@ export default function App({ icons }) {
 
   async function testDmEngine() {
     if (!campaign) return;
-
     if (dmSettings.mode === 'custom') {
-      if (!dmSettings.endpoint.trim()) {
-        setDmTestStatus('Custom endpoint is empty.');
-        return;
-      }
+      if (!dmSettings.endpoint.trim()) return setDmTestStatus('Custom endpoint is empty.');
       setDmTestStatus('Testing custom endpoint...');
       try {
         const payload = await callCustomEndpoint('Connection test: describe the porch in one sentence.', true);
@@ -647,7 +699,6 @@ export default function App({ icons }) {
       }
       return;
     }
-
     if (!STATIC_PLAY && apiOnline) {
       setDmTestStatus('Testing server DM...');
       try {
@@ -660,7 +711,6 @@ export default function App({ icons }) {
       }
       return;
     }
-
     const roll = rollCheck();
     setDmTestStatus(`Browser oracle OK. Test roll: ${roll.detail} · ${roll.outcome}.`);
   }
@@ -707,21 +757,13 @@ export default function App({ icons }) {
 
   async function rollD20() {
     if (!campaign) return;
-
     if (STATIC_PLAY || !apiOnline) {
       const roll = rollCheck({ expr: '1d20+2', mod: 2, dc: 12, label: 'Quick Check' });
       setLastRoll(roll);
-      const next = normalizeCampaign({
-        ...campaign,
-        log: [
-          ...(campaign.log || []),
-          { role: 'dm', content: `Quick Check: ${roll.detail} · ${roll.outcome}`, ts: new Date().toISOString() }
-        ]
-      });
+      const next = normalizeCampaign({ ...campaign, log: [...(campaign.log || []), { role: 'dm', content: `Quick Check: ${roll.detail} · ${roll.outcome}`, ts: new Date().toISOString() }] });
       commitCampaign(next, 'Quick check rolled.');
       return;
     }
-
     const result = await api(`/api/campaigns/${campaign.id}/roll`, { method: 'POST', body: JSON.stringify({ expr: '1d20+2', dc: 12, label: 'Quick Check' }) });
     setLastRoll(result.roll);
     setCampaign(normalizeCampaign(result.campaign));
@@ -742,18 +784,8 @@ export default function App({ icons }) {
     const preset = CLASS_PRESETS[characterDraft.class_name] || CLASS_PRESETS['Lantern-Seeker'];
     const next = normalizeCampaign({
       ...campaign,
-      player: {
-        ...campaign.player,
-        ...preset,
-        name: characterDraft.name.trim() || 'Adventurer',
-        class_name: characterDraft.class_name,
-        background: characterDraft.background.trim() || 'Porch-Touched',
-        level: campaign.player?.level || 1
-      },
-      log: [
-        ...(campaign.log || []),
-        { role: 'dm', content: `Character ledger updated: ${characterDraft.name || 'Adventurer'} the ${characterDraft.class_name}.`, ts: new Date().toISOString() }
-      ]
+      player: { ...campaign.player, ...preset, name: characterDraft.name.trim() || 'Adventurer', class_name: characterDraft.class_name, background: characterDraft.background.trim() || 'Porch-Touched', level: campaign.player?.level || 1 },
+      log: [...(campaign.log || []), { role: 'dm', content: `Character ledger updated: ${characterDraft.name || 'Adventurer'} the ${characterDraft.class_name}.`, ts: new Date().toISOString() }]
     });
     commitCampaign(next, 'Character ledger updated.');
   }
@@ -788,23 +820,14 @@ export default function App({ icons }) {
     if (!campaign) return;
     const patch = (campaign.pending_patches || []).find((p) => p.id === patchId);
     if (!patch) return;
-    const next = normalizeCampaign({
-      ...campaign,
-      world: applyPatch(campaign.world, patch),
-      pending_patches: (campaign.pending_patches || []).filter((p) => p.id !== patchId),
-      log: [...(campaign.log || []), { role: 'dm', content: `Canon approved: ${patchTitle(patch)}.`, ts: new Date().toISOString() }]
-    });
+    const next = normalizeCampaign({ ...campaign, world: applyPatch(campaign.world, patch), pending_patches: (campaign.pending_patches || []).filter((p) => p.id !== patchId), log: [...(campaign.log || []), { role: 'dm', content: `Canon approved: ${patchTitle(patch)}.`, ts: new Date().toISOString() }] });
     commitCampaign(next, 'Canon patch approved.');
   }
 
   function rejectPatch(patchId) {
     if (!campaign) return;
     const patch = (campaign.pending_patches || []).find((p) => p.id === patchId);
-    const next = normalizeCampaign({
-      ...campaign,
-      pending_patches: (campaign.pending_patches || []).filter((p) => p.id !== patchId),
-      log: patch ? [...(campaign.log || []), { role: 'dm', content: `Canon rejected: ${patchTitle(patch)}.`, ts: new Date().toISOString() }] : campaign.log
-    });
+    const next = normalizeCampaign({ ...campaign, pending_patches: (campaign.pending_patches || []).filter((p) => p.id !== patchId), log: patch ? [...(campaign.log || []), { role: 'dm', content: `Canon rejected: ${patchTitle(patch)}.`, ts: new Date().toISOString() }] : campaign.log });
     commitCampaign(next, 'Canon patch rejected.');
   }
 
@@ -812,13 +835,61 @@ export default function App({ icons }) {
     if (!campaign) return;
     const pending = campaign.pending_patches || [];
     const world = pending.reduce((acc, patch) => applyPatch(acc, patch), campaign.world);
-    const next = normalizeCampaign({
-      ...campaign,
-      world,
-      pending_patches: [],
-      log: [...(campaign.log || []), { role: 'dm', content: `Canon approved: ${pending.length} pending update${pending.length === 1 ? '' : 's'}.`, ts: new Date().toISOString() }]
-    });
+    const next = normalizeCampaign({ ...campaign, world, pending_patches: [], log: [...(campaign.log || []), { role: 'dm', content: `Canon approved: ${pending.length} pending update${pending.length === 1 ? '' : 's'}.`, ts: new Date().toISOString() }] });
     commitCampaign(next, 'All canon patches approved.');
+  }
+
+  function beginEncounter() {
+    if (!campaign) return;
+    const card = drawEncounter(campaign);
+    const next = normalizeCampaign({ ...campaign, active_encounter: card, log: [...(campaign.log || []), { role: 'dm', content: `Encounter drawn: ${card.title}\n\n${card.scene}\n\nDanger: ${card.danger}\nChallenge: ${card.skill} vs DC ${card.dc}.`, ts: new Date().toISOString() }] });
+    commitCampaign(next, 'Encounter card drawn.');
+  }
+
+  function resolveEncounter(approachSkill) {
+    if (!campaign?.active_encounter) return;
+    const encounter = campaign.active_encounter;
+    const skill = approachSkill || encounter.skill || 'perception';
+    const mod = campaign.player?.skills?.[skill] || 0;
+    const roll = rollCheck({ expr: `1d20+${mod}`, mod, dc: encounter.dc || 12, label: `${encounter.title}: ${skill}` });
+    const success = roll.outcome.includes('success');
+    const patch = success && encounter.patch ? [encounter.patch] : [];
+    const update = success
+      ? { add_items: [encounter.reward], quest_updates: [{ id: encounter.id === 'lying_door' ? 'q_mystery_1' : encounter.id === 'blue_moth_swarm' ? 'q_side_1' : 'q_main_1', progress: 1, clue: `${encounter.title}: ${encounter.reward}` }] }
+      : { hp_delta: -1 };
+    const base = applyCampaignUpdate(campaign, update);
+    const resultText = success
+      ? `Encounter cleared: ${encounter.title}. You gain ${encounter.reward}. A canon proposal is waiting if the encounter revealed world truth.`
+      : `Encounter complication: ${encounter.title}. The danger bites, HP -1, but the trail remains open.`;
+    const next = normalizeCampaign({
+      ...base,
+      active_encounter: null,
+      pending_patches: [...(base.pending_patches || []), ...patch],
+      encounter_log: [...(base.encounter_log || []), { id: encounter.id, title: encounter.title, outcome: roll.outcome, ts: new Date().toISOString() }],
+      log: [...(base.log || []), { role: 'dm', content: `${resultText}\n\nRoll: ${roll.detail} · ${roll.outcome}`, ts: new Date().toISOString() }]
+    });
+    setLastRoll(roll);
+    commitCampaign(next, success ? 'Encounter resolved successfully.' : 'Encounter resolved with a complication.');
+  }
+
+  function dismissEncounter() {
+    if (!campaign?.active_encounter) return;
+    const encounter = campaign.active_encounter;
+    const next = normalizeCampaign({ ...campaign, active_encounter: null, encounter_log: [...(campaign.encounter_log || []), { id: encounter.id, title: encounter.title, outcome: 'dismissed', ts: new Date().toISOString() }], log: [...(campaign.log || []), { role: 'dm', content: `Encounter passed by: ${encounter.title}.`, ts: new Date().toISOString() }] });
+    commitCampaign(next, 'Encounter dismissed.');
+  }
+
+  function useInventoryItem(item) {
+    if (!campaign) return;
+    const action = ITEM_ACTIONS.find((candidate) => candidate.match.test(item.toLowerCase())) || { title: 'Inspect item', text: `You study ${item}. It feels ordinary until the story gives it a job.`, update: {} };
+    const base = applyCampaignUpdate(campaign, action.update || {});
+    const patches = action.patch ? [action.patch] : [];
+    const next = normalizeCampaign({
+      ...base,
+      pending_patches: [...(base.pending_patches || []), ...patches],
+      log: [...(base.log || []), { role: 'player', content: `Use item: ${item}`, ts: new Date().toISOString() }, { role: 'dm', content: `${action.title}: ${action.text}${patches.length ? '\n\nCanon proposal added from inventory use.' : ''}`, ts: new Date().toISOString() }]
+    });
+    commitCampaign(next, `Used ${item}.`);
   }
 
   function exportSave() {
@@ -856,20 +927,15 @@ export default function App({ icons }) {
   const log = campaign?.log || [];
   const pendingPatches = campaign?.pending_patches || [];
   const worldNodes = useMemo(() => Object.values(campaign?.world?.nodes || {}), [campaign]);
-  const dmLabel = dmBackend?.mode === 'ai'
-    ? `AI DM · ${dmBackend.model}`
-    : dmSettings.mode === 'custom'
-      ? 'Custom browser endpoint'
-      : apiOnline
-        ? 'Server local fallback'
-        : 'Browser oracle fallback';
+  const activeEncounter = campaign?.active_encounter;
+  const dmLabel = dmBackend?.mode === 'ai' ? `AI DM · ${dmBackend.model}` : dmSettings.mode === 'custom' ? 'Custom browser endpoint' : apiOnline ? 'Server local fallback' : 'Browser oracle fallback';
 
   return <div className="app-shell">
     <header className="hero">
       <div>
         <p className="eyebrow">Prompt RPG Engine</p>
         <h1>PorchQuest369</h1>
-        <p className="subtitle">Dice, memory, world nodes, and a living campaign ledger.</p>
+        <p className="subtitle">Dice, memory, world nodes, encounters, inventory actions, and a living campaign ledger.</p>
       </div>
       <div className="hero-card">
         <Sparkles size={22} />
@@ -910,6 +976,23 @@ export default function App({ icons }) {
           <p className="muted">Never paste API keys here. The public Pages app only stores an endpoint URL; model keys belong behind your own server.</p>
         </Panel>
 
+        <Panel title="Encounter Card" icon={Dice5}>
+          {activeEncounter ? <div className="encounter-card">
+            <strong>{activeEncounter.title}</strong>
+            <p>{activeEncounter.scene}</p>
+            <small>Danger: {activeEncounter.danger}</small>
+            <small>Challenge: {activeEncounter.skill} vs DC {activeEncounter.dc}</small>
+            <div className="button-row">
+              <button onClick={() => resolveEncounter(activeEncounter.skill)}>Use {activeEncounter.skill}</button>
+              <button className="secondary-inline" onClick={() => resolveEncounter('perception')}>Perception</button>
+              <button className="secondary-inline" onClick={dismissEncounter}>Pass by</button>
+            </div>
+          </div> : <>
+            <p className="muted">Draw a lightweight encounter when the trail needs pressure, stakes, and a reward.</p>
+            <button className="ghost" onClick={beginEncounter}>Draw encounter</button>
+          </>}
+        </Panel>
+
         <Panel title="Character" icon={Dice5}>
           <h3>{player.name} · Lv {player.level} {player.class_name}</h3>
           <p className="muted">Background: {player.background || 'Porch-Touched'}</p>
@@ -918,9 +1001,7 @@ export default function App({ icons }) {
             <StatPill label="AC" value={player.ac} />
             <StatPill label="Turn" value={campaign?.turn ?? 0} />
           </div>
-          <div className="mini-grid">
-            {Object.entries(player.stats || {}).map(([k, v]) => <StatPill key={k} label={k.toUpperCase()} value={v} />)}
-          </div>
+          <div className="mini-grid">{Object.entries(player.stats || {}).map(([k, v]) => <StatPill key={k} label={k.toUpperCase()} value={v} />)}</div>
           <button className="ghost" onClick={rollD20}>Roll d20+2</button>
           <button className="ghost secondary" onClick={resetBrowserCampaign}>Reset browser campaign</button>
           {lastRoll && <p className="roll-result">{lastRoll.label || lastRoll.expr}: {lastRoll.detail} · {lastRoll.outcome}</p>}
@@ -929,9 +1010,7 @@ export default function App({ icons }) {
         <Panel title="Character Setup" icon={Sparkles}>
           <form className="stack" onSubmit={applyCharacterDraft}>
             <label>Hero name<input value={characterDraft.name} onChange={(e) => setCharacterDraft({ ...characterDraft, name: e.target.value })} /></label>
-            <label>Class<select value={characterDraft.class_name} onChange={(e) => setCharacterDraft({ ...characterDraft, class_name: e.target.value })}>
-              {Object.keys(CLASS_PRESETS).map((name) => <option key={name} value={name}>{name}</option>)}
-            </select></label>
+            <label>Class<select value={characterDraft.class_name} onChange={(e) => setCharacterDraft({ ...characterDraft, class_name: e.target.value })}>{Object.keys(CLASS_PRESETS).map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
             <label>Background<input value={characterDraft.background} onChange={(e) => setCharacterDraft({ ...characterDraft, background: e.target.value })} /></label>
             <button type="submit" className="ghost">Update character</button>
           </form>
@@ -944,28 +1023,29 @@ export default function App({ icons }) {
               <strong>{patchTitle(patch)}</strong>
               <span>{patchSummary(patch)}</span>
               <small>{patch.reason}</small>
-              <div className="button-row">
-                <button onClick={() => approvePatch(patch.id)}>Approve</button>
-                <button className="secondary-inline" onClick={() => rejectPatch(patch.id)}>Reject</button>
-              </div>
+              <div className="button-row"><button onClick={() => approvePatch(patch.id)}>Approve</button><button className="secondary-inline" onClick={() => rejectPatch(patch.id)}>Reject</button></div>
             </li>)}</ul>
           </>}
         </Panel>
 
-        <Panel title="Save Tools" icon={Backpack}>
-          <div className="button-row wide">
-            <button onClick={exportSave}>Export save</button>
-            <label className="file-button">Import save<input type="file" accept="application/json" onChange={importSave} /></label>
-          </div>
-          <p className="muted">Browser mode saves locally on this device. Exporting gives you a portable campaign receipt.</p>
-        </Panel>
-
         <Panel title="Quests" icon={ScrollText}>
-          <ul className="list">{(campaign?.quests || []).map(q => <li key={q.id}><strong>{q.status}</strong>{q.title}</li>)}</ul>
+          <ul className="list quests">{(campaign?.quests || []).map((q) => <li key={q.id}>
+            <strong>{q.status}</strong>{q.title}
+            <div className="progress"><span style={{ width: `${Math.min(100, ((q.progress || 0) / (q.max_progress || 3)) * 100)}%` }} /></div>
+            <small>{q.progress || 0}/{q.max_progress || 3} clues{q.clues?.length ? ` · ${q.clues.slice(-2).join(' · ')}` : ''}</small>
+          </li>)}</ul>
         </Panel>
 
-        <Panel title="Inventory" icon={Backpack}>
-          <ul className="list">{(player.inventory || []).map((item, idx) => <li key={idx}>{item}</li>)}</ul>
+        <Panel title="Inventory Actions" icon={Backpack}>
+          <ul className="list inventory-list">{(player.inventory || []).map((item, idx) => <li key={`${item}_${idx}`}>
+            <span>{item}</span>
+            <button className="item-button" onClick={() => useInventoryItem(item)}>Use</button>
+          </li>)}</ul>
+        </Panel>
+
+        <Panel title="Save Tools" icon={Backpack}>
+          <div className="button-row wide"><button onClick={exportSave}>Export save</button><label className="file-button">Import save<input type="file" accept="application/json" onChange={importSave} /></label></div>
+          <p className="muted">Browser mode saves locally on this device. Exporting gives you a portable campaign receipt.</p>
         </Panel>
 
         <Panel title="World Nodes" icon={Map}>
