@@ -1,0 +1,14 @@
+{
+  "schema": "porchquest.review_queue.v1",
+  "queue": [
+    {
+      "id": "sample-submission-001",
+      "title": "Sample Submission Slot",
+      "status": "ready-for-review",
+      "submitted_by": "local-author",
+      "pack_path": "content-packs/sample-submission.route-pack.json",
+      "receipt_path": "content-packs/sample-submission.approval-receipt.json",
+      "notes": "Scaffold row for future submitted packs. Replace with a real branch or zip submission before review."
+    }
+  ]
+}
