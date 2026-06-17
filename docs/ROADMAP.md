@@ -174,7 +174,7 @@ Status: landed and hardened through v0.9.4.
 
 ## v1.0 — player mode
 
-Status: landed and hardened through v1.0.2.
+Status: landed and hardened through v1.0.3.
 
 - public page defaults to `Play Adventure` instead of Creator Studio
 - character selection with four presets
@@ -196,8 +196,14 @@ Status: landed and hardened through v1.0.2.
 - v1.0.2 Load Fresh Starter action to clear stale local pack state
 - v1.0.2 first-scene At the Table intro panel
 - v1.0.2 clearer fallback route messaging during play
+- v1.0.3 turn status panel with clear next action
+- v1.0.3 four-step turn tracker: Roll, Ask, Reward, Route
+- v1.0.3 action completion states for scene, helper, and reward buttons
+- v1.0.3 route choice cards with destination and condition details
+- v1.0.3 wider adventure receipt panel with End Session and Download controls
+- v1.0.3 visited-scene count on the player sheet
 
-## v1.0.3 — next focus
+## v1.0.4 — next focus
 
 - improve scene outcome copy for success, partial success, and complication
 - add a route ending screen
