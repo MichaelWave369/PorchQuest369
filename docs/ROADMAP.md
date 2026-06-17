@@ -174,7 +174,7 @@ Status: landed and hardened through v0.9.4.
 
 ## v1.0 — player mode
 
-Status: landed.
+Status: landed and hardened through v1.0.1.
 
 - public page defaults to `Play Adventure` instead of Creator Studio
 - character selection with four presets
@@ -187,8 +187,12 @@ Status: landed.
 - local adventure receipt log
 - downloadable adventure receipt JSON
 - Creator Studio remains available from Player Mode through `Open Creator Studio`
+- v1.0.1 lobby flow for choosing pack and hero before starting
+- v1.0.1 `Change Pack / Hero` action from active runs
+- v1.0.1 reviewed pack loading clears stale player runs
+- v1.0.1 fallback route choices keep play moving when a scene has no authored outgoing edge
 
-## v1.0.1 — next focus
+## v1.0.2 — next focus
 
 - improve scene outcome copy for success, partial success, and complication
 - add a route ending screen
