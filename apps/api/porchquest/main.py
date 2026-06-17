@@ -9,14 +9,14 @@ from pydantic import BaseModel, Field
 from .adventure import adventure_state, ask_npc, camp_rest, complete_finale, draw_encounter, draw_scene, meet_npc, resolve_encounter, resolve_scene
 from .ai_adapter import adapter_status, ai_turn, dm_test_turn
 from .campaigns import default_campaign, list_campaigns, load_campaign, save_campaign
-from .content_packs import list_route_packs, load_route_pack, save_route_pack
+from .content_packs import list_route_packs, load_route_pack, package_route_pack, save_route_pack
 from .dice import roll_expr
 from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
 from .rewards import draw_reward
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.8.4")
+app = FastAPI(title="PorchQuest369 API", version="0.8.5")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -93,6 +93,14 @@ def save_content_pack(pack_id: str, req: RoutePackSaveRequest) -> Dict[str, Any]
         return {"saved": save_route_pack(pack_id, req.pack)}
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/api/content-packs/{pack_id}/submission-package")
+def submission_package(pack_id: str, req: RoutePackSaveRequest) -> Dict[str, Any]:
+    try:
+        return {"package": package_route_pack(pack_id, req.pack)}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
