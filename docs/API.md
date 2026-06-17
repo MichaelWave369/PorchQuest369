@@ -10,7 +10,7 @@ Returns service status and API version.
 
 ### `GET /api/content-packs`
 
-Lists reviewed route packs available to the API host. v0.8.4 also returns the backend write-gate status.
+Lists reviewed route packs available to the API host. v0.8.5 also returns the backend write-gate status.
 
 ```json
 {
@@ -98,6 +98,45 @@ Blocked response shape:
 }
 ```
 
+### `POST /api/content-packs/{pack_id}/submission-package`
+
+Creates a branch-ready submission package without writing files to disk. This supports maintainer workflows where the backend returns proposed file paths and contents for a later PR or branch commit.
+
+Request shape:
+
+```json
+{
+  "pack": {
+    "schema": "porchquest.route_pack.v1",
+    "id": "example-pack",
+    "title": "Example Pack",
+    "quests": [],
+    "scenes": [],
+    "npcs": [],
+    "rewards": [],
+    "edges": []
+  }
+}
+```
+
+Response shape:
+
+```json
+{
+  "package": {
+    "schema": "porchquest.pack_submission_package.v1",
+    "pack_id": "example-pack",
+    "branch_name": "content-pack/example-pack",
+    "files": [
+      { "path": "content-packs/example-pack.route-pack.json", "content": "..." },
+      { "path": "content-packs/example-pack.approval-receipt.json", "content": "..." },
+      { "path": "docs/reviews/example-pack.md", "content": "..." }
+    ],
+    "receipt": {}
+  }
+}
+```
+
 ## DM adapter API
 
 ### `GET /api/dm/status`
@@ -178,12 +217,3 @@ The turn engine can apply quest progress, quest clues, NPC updates, inventory ch
 - `POST /api/campaigns/{campaign_id}/roll`
 - `POST /api/campaigns/{campaign_id}/world_patch`
 - `GET /api/campaigns/{campaign_id}/questpack`
-- `GET /api/campaigns/{campaign_id}/adventure_state`
-- `POST /api/campaigns/{campaign_id}/scene/draw`
-- `POST /api/campaigns/{campaign_id}/scene/resolve`
-- `POST /api/campaigns/{campaign_id}/encounter/draw`
-- `POST /api/campaigns/{campaign_id}/encounter/resolve`
-- `POST /api/campaigns/{campaign_id}/npc/meet`
-- `POST /api/campaigns/{campaign_id}/npc/{npc_id}/ask`
-- `POST /api/campaigns/{campaign_id}/camp`
-- `POST /api/campaigns/{campaign_id}/finale`
