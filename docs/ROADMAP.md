@@ -147,7 +147,7 @@ Status: landed and hardened through v0.8.9.
 
 ## v0.9 — unified UI polish
 
-Status: landed and hardened through v0.9.1.
+Status: landed and hardened through v0.9.2.
 
 - public Pages entrypoint moved to standalone unified shells with only base styles plus the current version stylesheet
 - compact hero and promotion digest badge
@@ -161,8 +161,12 @@ Status: landed and hardened through v0.9.1.
 - v0.9.1 gallery details action that inspects pack metadata without immediately loading a pack
 - v0.9.1 export center for route-pack JSON, approval receipts, playtest transcripts, and manifest review
 - v0.9.1 editor quality-of-life actions for clone pack, reset starter, route-edge reorder, and long-text fields
+- v0.9.2 deterministic fixture fallback rows so the overview never sits empty on GitHub Pages
+- v0.9.2 quick playtest receipt button from the overview
+- v0.9.2 playtest metric and readiness strip update immediately after quick playtest
+- v0.9.2 route graph wrapping for long scene IDs, labels, and conditions
 
-## v0.9.2 — next focus
+## v0.9.3 — next focus
 
 - improve route graph visuals with directional arrows and scene-node grouping
 - add recent packs and favorite packs stored locally
