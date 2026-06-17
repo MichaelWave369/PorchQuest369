@@ -52,7 +52,7 @@ Status: landed.
 
 ## v0.5 — starter adventure loop
 
-Status: first pass landed.
+Status: landed and hardened.
 
 - browser save migration to v4
 - scene deck / room deck with act labels, locations, choices, DCs, rewards, and quest movement
@@ -61,16 +61,42 @@ Status: first pass landed.
 - adventure state panel for in-motion / hot thread / finale ready / complete
 - finale and partial-ending recorder for Blackwood Hill
 - styling for scene cards, NPC cards, trust rows, and ending cards
+- backend parity for scene, NPC, camp, and ending endpoints
+- condition tags such as watched, tired, inspired, marked, hidden
+
+## v0.6 — backend bridge hardening
+
+Status: landed and hardened.
+
+- Pages condition-chip UI
+- backend mode controls in the browser app
+- Load ID flow for continuing a server campaign
+- Save to Server flow for pushing browser progress to the API
+- sync_from_client endpoint
+- bridge docs for browser-first and backend-linked play
+
+## v0.7 — content expansion pack
+
+Status: first pass landed.
+
+- browser save migration to v7
+- expanded scene deck
+- expanded encounter deck
+- expanded NPC helper deck
+- reward table for small discoveries, clues, and condition changes
+- lightweight receipt milestones
+- supplemental v0.7 styling
+- public Pages entrypoint switched to AppV7
 
 Next hardening pass:
 
-- backend parity for scene, NPC, camp, and ending endpoints
-- condition tags such as watched, tired, inspired, marked, hidden
-- scene/encounter balancing pass
-- starter adventure content expansion
-- lightweight achievement receipts
+- backend reward-table parity
+- clearer quest-complete celebration panel
+- ending screen polish
+- route / mini-map tracker
+- world-node detail drawer
 
-## v0.6 — campaign studio
+## v0.8 — campaign studio
 
 - world node editor
 - NPC editor
@@ -79,7 +105,7 @@ Next hardening pass:
 - export/import quest packs
 - campaign seed selector
 
-## v0.7 — deeper character builder
+## v0.9 — deeper character builder
 
 - point buy / standard array
 - background packages
@@ -88,7 +114,7 @@ Next hardening pass:
 - simple equipment kits
 - level-up receipts
 
-## v0.8 — multiplayer table mode
+## v1.0 — multiplayer table mode
 
 - local co-op session
 - multiple character sheets
