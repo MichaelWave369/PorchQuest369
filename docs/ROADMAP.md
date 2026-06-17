@@ -147,20 +147,25 @@ Status: landed and hardened through v0.8.9.
 
 ## v0.9 — unified UI polish
 
-Status: landed.
+Status: landed and hardened through v0.9.1.
 
-- public Pages entrypoint now loads AppV21 with only base styles plus `v21.css`
+- public Pages entrypoint moved to standalone unified shells with only base styles plus the current version stylesheet
 - compact hero and promotion digest badge
 - denser metric strip for pack, cards, validation, and gallery count
 - fuller overview grid with validation, manifest, route graph, and fixture checks
 - visible fixture loading and pass/fail states
 - gallery, review, editor, and JSON tools kept in one current standalone studio shell
 - old version panels remain available in source history but are not rendered by the public app
+- v0.9.1 creator-flow guide strip for pack selection, editing, validation, playtesting, and export readiness
+- v0.9.1 playtest tab for scenes, helpers, rewards, and transcript receipts
+- v0.9.1 gallery details action that inspects pack metadata without immediately loading a pack
+- v0.9.1 export center for route-pack JSON, approval receipts, playtest transcripts, and manifest review
+- v0.9.1 editor quality-of-life actions for clone pack, reset starter, route-edge reorder, and long-text fields
 
-## v0.9.1 — next focus
+## v0.9.2 — next focus
 
-- improve route graph visuals with better arrows and node grouping
-- add compact playtest preview back into the unified shell
-- add keyboard-friendly editor controls
-- add “recently loaded packs” list
-- improve mobile spacing after field testing
+- improve route graph visuals with directional arrows and scene-node grouping
+- add recent packs and favorite packs stored locally
+- add keyboard-friendly editor shortcuts and focus order
+- add mobile compact mode for the editor cards
+- add playtest outcome labels for success, partial, and complication
