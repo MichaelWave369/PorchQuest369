@@ -97,9 +97,9 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Status: landed and hardened through v0.8.4.
+Status: landed and hardened through v0.8.5.
 
-- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, then AppV15
+- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, then AppV16
 - browser studio localStorage route-pack migration through v7
 - contributor-safe route-pack JSON format
 - formal route-pack schema file with optional route `edges`
@@ -125,14 +125,19 @@ Status: landed and hardened through v0.8.4.
 - reviewed-pack promotion checklist
 - GitHub Pages content-pack gallery polish
 - Campaign Studio docs for contributor workflow and content boundaries
+- schema-rule validation beyond helper metadata
+- reviewed-pack approval receipt ledger
+- filtered/searchable content-pack gallery
+- route-edge reorder controls
+- backend submission package endpoint through `POST /api/content-packs/{pack_id}/submission-package`
 
-## v0.8.5 — next focus
+## v0.8.6 — next focus
 
-- schema-file validation beyond the lightweight helper pass
-- reviewed-pack approval receipts
-- route graph drag/drop polish
-- backend PR/branch packaging for submitted packs
-- content-pack gallery filters and search
+- AppV16/AppV15 state sync polish without reload
+- one-click import of backend submission package files into a local zip
+- richer promotion review statuses
+- content-pack diff viewer
+- reviewed-pack gallery thumbnails
 
 ## v0.9 — deeper character builder
 
