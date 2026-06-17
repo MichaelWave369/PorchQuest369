@@ -2,132 +2,34 @@
   "schema": "porchquest.route_pack.v1",
   "id": "blackwood-starter",
   "title": "Lanterns Under Blackwood Hill",
-  "summary": "A starter route pack for browser play and Campaign Studio editing.",
+  "summary": "A lantern-lit starter adventure about route marks, quiet helpers, and a hill that remembers doors.",
   "quests": [
-    {
-      "id": "q_main_1",
-      "title": "Find the missing porch key",
-      "max_progress": 5
-    },
-    {
-      "id": "q_side_1",
-      "title": "Help the lantern-maker",
-      "max_progress": 4
-    },
-    {
-      "id": "q_mystery_1",
-      "title": "Learn why the hill doors remember",
-      "max_progress": 4
-    }
+    { "id": "q_main_1", "title": "Find the missing porch key", "max_progress": 5 },
+    { "id": "q_side_1", "title": "Help the lantern-maker", "max_progress": 4 },
+    { "id": "q_mystery_1", "title": "Learn why the hill doors remember", "max_progress": 4 }
   ],
   "scenes": [
-    {
-      "id": "porch_threshold",
-      "act": "I",
-      "title": "Porch Threshold",
-      "skill": "perception",
-      "dc": 12,
-      "quest_id": "q_main_1",
-      "reward": "threshold clue",
-      "text": "A route mark waits under the porch rail."
-    },
-    {
-      "id": "left_trail",
-      "act": "I",
-      "title": "Left Trail",
-      "skill": "survival",
-      "dc": 12,
-      "quest_id": "q_side_1",
-      "reward": "trail clue",
-      "text": "A soft path bends toward a small helper sign."
-    },
-    {
-      "id": "name_gate",
-      "act": "II",
-      "title": "Name Gate",
-      "skill": "persuasion",
-      "dc": 13,
-      "quest_id": "q_mystery_1",
-      "reward": "name clue",
-      "text": "A quiet gate asks for a kind answer before it opens."
-    },
-    {
-      "id": "rain_library",
-      "act": "II",
-      "title": "Rain Library",
-      "skill": "arcana",
-      "dc": 14,
-      "quest_id": "q_mystery_1",
-      "reward": "record clue",
-      "text": "Shelves of wet paper keep a careful list of travelers."
-    },
-    {
-      "id": "candle_market",
-      "act": "III",
-      "title": "Candle Market",
-      "skill": "perception",
-      "dc": 14,
-      "quest_id": "q_main_1",
-      "reward": "blue map",
-      "text": "Blue light maps a safe way through the hill market."
-    }
+    { "id": "porch_threshold", "act": "I", "title": "Porch Threshold", "skill": "perception", "dc": 12, "quest_id": "q_main_1", "reward": "The rail-mark points left, not toward the road.", "text": "Rain beads along the old porch rail. Beneath the peeling paint, a route mark waits like someone scratched it there with shaking hands." },
+    { "id": "left_trail", "act": "I", "title": "Left Trail", "skill": "survival", "dc": 12, "quest_id": "q_side_1", "reward": "The soft trail bends toward a helper sign hung low in the trees.", "text": "The trail leans away from the porch as if it remembers leaving. Wet roots shine through the mud, and the woods pause between drops of rain." },
+    { "id": "name_gate", "act": "II", "title": "Name Gate", "skill": "persuasion", "dc": 13, "quest_id": "q_mystery_1", "reward": "The gate opens for kindness before it opens for certainty.", "text": "A narrow gate waits between two bent posts. Its latch is cold, but the wood around it is warm where many hands have hesitated." },
+    { "id": "rain_library", "act": "II", "title": "Rain Library", "skill": "arcana", "dc": 14, "quest_id": "q_mystery_1", "reward": "The wet ledger remembers who crossed the hill and who turned back.", "text": "Shelves of damp paper breathe in the dark. Every page smells like rainwater, candle smoke, and names that were nearly forgotten." },
+    { "id": "candle_market", "act": "III", "title": "Candle Market", "skill": "perception", "dc": 14, "quest_id": "q_main_1", "reward": "A blue map shows the safe way home through the hill market.", "text": "Blue candles burn in crooked rows. Their flames lean toward a map only visible when you stop trying to own the light." }
   ],
   "npcs": [
-    {
-      "id": "old_joss",
-      "title": "Old Joss",
-      "role": "Porchkeeper",
-      "quest_id": "q_main_1",
-      "clue": "Old Joss marks the kind route."
-    },
-    {
-      "id": "mara_lanternwright",
-      "title": "Mara Lanternwright",
-      "role": "Lantern-maker",
-      "quest_id": "q_side_1",
-      "clue": "Mara reads the helper sign."
-    },
-    {
-      "id": "nix_understep",
-      "title": "Nix Understep",
-      "role": "Hill-runner",
-      "quest_id": "q_mystery_1",
-      "clue": "Nix explains the memory-door rule."
-    }
+    { "id": "old_joss", "title": "Old Joss", "role": "Porchkeeper", "quest_id": "q_main_1", "clue": "Old Joss says, 'A trail worth finding rarely starts where folks expect. Watch what the porch is pointing away from.'" },
+    { "id": "mara_lanternwright", "title": "Mara Lanternwright", "role": "Lantern-maker", "quest_id": "q_side_1", "clue": "Mara says, 'If a place lies to you, check what it repeats. The helper sign repeats left, left, left.'" },
+    { "id": "nix_understep", "title": "Nix Understep", "role": "Hill-runner", "quest_id": "q_mystery_1", "clue": "Nix whispers, 'Memory-doors do not open to force. They open when you give them the name they lost.'" }
   ],
   "rewards": [
-    {
-      "id": "rest_token",
-      "title": "Rest Token",
-      "text": "Restore 1 HP and clear tired.",
-      "items": ["rest token"],
-      "hp": 1,
-      "quest_id": "",
-      "clue": "",
-      "add": [],
-      "clear": ["tired"]
-    },
-    {
-      "id": "blue_thread",
-      "title": "Blue Thread",
-      "text": "Progress the key route.",
-      "items": ["blue thread"],
-      "hp": 0,
-      "quest_id": "q_main_1",
-      "clue": "Blue thread points toward the key route.",
-      "add": [],
-      "clear": []
-    },
-    {
-      "id": "porch_coin",
-      "title": "Porch Coin",
-      "text": "Gain inspired.",
-      "items": ["porch coin"],
-      "hp": 0,
-      "quest_id": "",
-      "clue": "",
-      "add": ["inspired"],
-      "clear": []
-    }
+    { "id": "rest_token", "title": "Rest Token", "text": "A warm token settles in your palm. It smells faintly of tea and gives you enough breath to continue.", "items": ["rest token"], "hp": 1, "quest_id": "", "clue": "Rest is also a kind of route.", "add": [], "clear": ["tired"] },
+    { "id": "blue_thread", "title": "Blue Thread", "text": "A blue thread catches on your sleeve, tugging once toward the key route before going still.", "items": ["blue thread"], "hp": 0, "quest_id": "q_main_1", "clue": "Blue thread points toward the missing porch key.", "add": [], "clear": [] },
+    { "id": "porch_coin", "title": "Porch Coin", "text": "You find a porch coin tucked where rain cannot reach it. One side shows a lantern. The other shows an open door.", "items": ["porch coin"], "hp": 0, "quest_id": "", "clue": "The coin is a promise: the porch remembers return paths.", "add": ["inspired"], "clear": [] }
+  ],
+  "edges": [
+    { "id": "edge_porch_left", "from": "porch_threshold", "to": "left_trail", "label": "follow the rail-mark left", "condition": "after reading the porch mark" },
+    { "id": "edge_left_gate", "from": "left_trail", "to": "name_gate", "label": "follow the low helper sign", "condition": "when the trail starts listening" },
+    { "id": "edge_gate_library", "from": "name_gate", "to": "rain_library", "label": "speak kindly and enter the rain library", "condition": "when the gate warms" },
+    { "id": "edge_library_market", "from": "rain_library", "to": "candle_market", "label": "carry the wet ledger to the candle market", "condition": "after finding a remembered name" },
+    { "id": "edge_market_porch", "from": "candle_market", "to": "porch_threshold", "label": "follow the blue map home", "condition": "when the candles lean toward return" }
   ]
 }
