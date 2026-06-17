@@ -97,15 +97,26 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Next focus.
+Status: first pass landed.
 
+- public Pages entrypoint switched to AppV10
+- browser save migration to v10
 - editable scene cards
 - editable NPC cards
-- quest builder
-- route pack export/import
-- contributor-safe content file format
-- campaign pack import
-- world node editor
+- route-pack JSON validation
+- route-pack export/import
+- save export
+- playtest loop for edited content
+- contributor-safe Campaign Studio docs
+
+## v0.8 hardening — next focus
+
+- quest editor UI
+- reward editor UI
+- route-pack schema file
+- content-pack folder for reviewed packs
+- in-app validation messages per card
+- optional backend content-pack loader
 
 ## v0.9 — deeper character builder
 
