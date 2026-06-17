@@ -9,13 +9,14 @@ from pydantic import BaseModel, Field
 from .adventure import adventure_state, ask_npc, camp_rest, complete_finale, draw_encounter, draw_scene, meet_npc, resolve_encounter, resolve_scene
 from .ai_adapter import adapter_status, ai_turn, dm_test_turn
 from .campaigns import default_campaign, list_campaigns, load_campaign, save_campaign
+from .content_packs import list_route_packs, load_route_pack
 from .dice import roll_expr
 from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
 from .rewards import draw_reward
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.7.2")
+app = FastAPI(title="PorchQuest369 API", version="0.8.2")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -67,6 +68,21 @@ def health() -> Dict[str, Any]:
     return {"ok": True, "service": "porchquest369-api", "version": app.version}
 
 
+@app.get("/api/content-packs")
+def content_pack_index() -> Dict[str, Any]:
+    return list_route_packs()
+
+
+@app.get("/api/content-packs/{pack_id}")
+def content_pack(pack_id: str) -> Dict[str, Any]:
+    try:
+        return {"pack": load_route_pack(pack_id)}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
 @app.get("/api/dm/status")
 def dm_status() -> Dict[str, Any]:
     return {"dm": adapter_status()}
@@ -102,11 +118,6 @@ def get_campaign(campaign_id: str) -> Dict[str, Any]:
 
 @app.post("/api/campaigns/{campaign_id}/sync_from_client")
 def sync_from_client(campaign_id: str, req: ClientSyncRequest) -> Dict[str, Any]:
-    """Replace a server campaign with a browser-exported campaign shape.
-
-    This is intentionally explicit instead of silently syncing on every request:
-    the player chooses when the local browser table becomes the server table.
-    """
     campaign = dict(req.campaign or {})
     if not campaign:
         raise HTTPException(status_code=400, detail="Missing campaign payload.")
