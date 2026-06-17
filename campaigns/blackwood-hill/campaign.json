@@ -1,0 +1,58 @@
+{
+  "id": "blackwood-hill-seed",
+  "campaign_name": "Lanterns Under Blackwood Hill",
+  "setting": "An impossible porch opens onto Blackwood Hill, where blue lanterns mark old paths and doors remember lies.",
+  "tone": "cozy mystery, wonder, lantern-lit heroism",
+  "ruleset": "5e-light inspired / original campaign content",
+  "opening": "Rain taps the roof of a porch that should not exist. Beyond the steps, Blackwood Hill glows with blue lanterns between the trees.",
+  "factions": [
+    "Porchkeepers",
+    "Candle Court",
+    "Hollow Dice",
+    "Rootbound Choir",
+    "Iron Saint"
+  ],
+  "quest_hooks": [
+    "Find the missing porch key before midnight.",
+    "Rescue the lantern-maker's apprentice from the Candle Court.",
+    "Descend into Blackwood Hill and learn why the dice keep landing on 13."
+  ],
+  "world": {
+    "nodes": {
+      "infinite_porch": {
+        "id": "infinite_porch",
+        "type": "threshold",
+        "title": "The Infinite Porch",
+        "tags": [
+          "safe-start",
+          "threshold"
+        ],
+        "summary": "A porch between ordinary life and the lantern road.",
+        "facts": [
+          "The porch appears during rain.",
+          "One key is missing from the porch key ring."
+        ]
+      },
+      "blackwood_hill": {
+        "id": "blackwood_hill",
+        "type": "location",
+        "title": "Blackwood Hill",
+        "tags": [
+          "forest",
+          "blue-lanterns"
+        ],
+        "summary": "A forested hill where blue lanterns burn and doors remember lies.",
+        "facts": [
+          "Every door remembers the last lie spoken near it."
+        ]
+      }
+    },
+    "edges": [
+      {
+        "from": "infinite_porch",
+        "to": "blackwood_hill",
+        "rel": "threshold_to"
+      }
+    ]
+  }
+}
