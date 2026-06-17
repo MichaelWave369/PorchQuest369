@@ -1,0 +1,40 @@
+.message.system {
+  background: rgba(26, 63, 42, .72);
+  border: 1px solid #4f765a;
+}
+
+.reward-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid #70623a;
+  background: linear-gradient(180deg, rgba(69,57,25,.78), rgba(16,23,41,.84));
+}
+
+.reward-card strong {
+  color: #f7d7a1;
+  font-size: 17px;
+}
+
+.reward-card small {
+  color: #95d5ff;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 11px;
+}
+
+.receipt-list li {
+  border: 1px solid #4f765a;
+  background: linear-gradient(90deg, rgba(26,63,42,.55), rgba(16,23,41,.9));
+}
+
+.receipt-list li::before {
+  content: 'Receipt: ';
+  color: #f7d7a1;
+}
+
+.button-row.wide > * {
+  min-width: 130px;
+}
