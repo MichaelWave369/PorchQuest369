@@ -6,13 +6,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from .ai_adapter import adapter_status, ai_turn
 from .campaigns import default_campaign, list_campaigns, load_campaign, save_campaign
 from .dice import roll_expr
 from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.1.0")
+app = FastAPI(title="PorchQuest369 API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -30,6 +31,7 @@ class CreateCampaignRequest(BaseModel):
 class TurnRequest(BaseModel):
     action: str = Field(..., min_length=1)
     manual_roll: Optional[Dict[str, Any]] = None
+    allow_ai: bool = True
 
 
 class RollRequest(BaseModel):
@@ -44,7 +46,12 @@ class WorldPatchRequest(BaseModel):
 
 @app.get("/api/health")
 def health() -> Dict[str, Any]:
-    return {"ok": True, "service": "porchquest369-api"}
+    return {"ok": True, "service": "porchquest369-api", "version": app.version}
+
+
+@app.get("/api/dm/status")
+def dm_status() -> Dict[str, Any]:
+    return {"dm": adapter_status()}
 
 
 @app.get("/api/campaigns")
@@ -71,7 +78,10 @@ def get_campaign(campaign_id: str) -> Dict[str, Any]:
 def turn(campaign_id: str, req: TurnRequest) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
-        result = fallback_turn(campaign, req.action, req.manual_roll)
+        result = ai_turn(campaign, req.action, req.manual_roll) if req.allow_ai else None
+        if result is None:
+            result = fallback_turn(campaign, req.action, req.manual_roll)
+            result["dm_backend"] = adapter_status()
         save_campaign(result["campaign"])
         return result
     except FileNotFoundError as e:
