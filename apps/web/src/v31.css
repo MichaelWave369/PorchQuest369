@@ -1,0 +1,8 @@
+.player-v106 .mood-strip{grid-column:1/-1;background:linear-gradient(135deg,rgba(37,51,70,.92),rgba(10,16,31,.96));border-color:rgba(116,163,255,.35)}
+.player-v106 .mood-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.player-v106 .mood-grid span{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid rgba(120,140,180,.28);border-radius:14px;background:rgba(255,255,255,.035);line-height:1.35}
+.player-v106 .mood-grid b{color:#ffdd91;text-transform:uppercase;font-size:.72rem;letter-spacing:.08em}
+.player-v106 .scene-note{display:block;margin:12px 0 0;color:#aab7d6;line-height:1.45}
+.player-v106 .last-outcome span{line-height:1.45}
+.player-v106 .receipt-entry p{line-height:1.45}
+@media(max-width:900px){.player-v106 .mood-grid{grid-template-columns:1fr}}
