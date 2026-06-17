@@ -105,6 +105,7 @@ def package_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
         "schema": "porchquest.pack_submission_receipt.v1",
         "pack_id": safe_id,
         "title": data.get("title", safe_id),
+        "summary": data.get("summary", ""),
         "created_at": now,
         "counts": {
             "quests": len(data.get("quests", [])),
@@ -133,7 +134,10 @@ def package_route_pack(pack_id: str, pack: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "schema": "porchquest.pack_submission_package.v1",
         "pack_id": safe_id,
+        "title": data.get("title", safe_id),
+        "summary": data.get("summary", ""),
         "branch_name": f"content-pack/{safe_id}",
+        "zip_name": f"{safe_id}.submission-package.zip",
         "write_gate": write_gate_status(),
         "files": [
             {"path": f"content-packs/{safe_id}.route-pack.json", "content": pack_json},
