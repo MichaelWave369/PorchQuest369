@@ -97,9 +97,9 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Status: landed and hardened through v0.8.5.
+Status: landed and hardened through v0.8.6.
 
-- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, then AppV16
+- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, AppV16, then AppV17
 - browser studio localStorage route-pack migration through v7
 - contributor-safe route-pack JSON format
 - formal route-pack schema file with optional route `edges`
@@ -124,34 +124,22 @@ Status: landed and hardened through v0.8.5.
 - exportable playtest transcript receipts
 - reviewed-pack promotion checklist
 - GitHub Pages content-pack gallery polish
-- Campaign Studio docs for contributor workflow and content boundaries
 - schema-rule validation beyond helper metadata
 - reviewed-pack approval receipt ledger
 - filtered/searchable content-pack gallery
 - route-edge reorder controls
 - backend submission package endpoint through `POST /api/content-packs/{pack_id}/submission-package`
+- backend submission packages now include `zip_name`, title, and summary metadata
+- browser one-click `.zip` export for local and backend submission packages
+- richer promotion review status labels
+- content-pack diff viewer against reviewed packs
+- reviewed-pack gallery thumbnails and status metadata
+- v0.8.6 package export docs
 
-## v0.8.6 — next focus
+## v0.8.7 — next focus
 
-- AppV16/AppV15 state sync polish without reload
-- one-click import of backend submission package files into a local zip
-- richer promotion review statuses
-- content-pack diff viewer
-- reviewed-pack gallery thumbnails
-
-## v0.9 — deeper character builder
-
-- point buy / standard array
-- background packages
-- class packages
-- skill proficiency toggles
-- simple equipment kits
-- level-up receipts
-
-## v1.0 — multiplayer table mode
-
-- local co-op session
-- multiple character sheets
-- shared dice log
-- DM override controls
-- shareable table state
+- AppV17/AppV16 live state bridge without a manual sync button
+- package zip manifest preview before download
+- approval receipt timeline view
+- schema validation test fixtures
+- gallery sort controls and thumbnail polish
