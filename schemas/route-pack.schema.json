@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MichaelWave369/PorchQuest369/schemas/route-pack.schema.json",
+  "title": "PorchQuest369 Route Pack",
+  "type": "object",
+  "required": ["schema", "id", "title", "quests", "scenes", "npcs", "rewards"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "porchquest.route_pack.v1" },
+    "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "summary": { "type": "string", "maxLength": 280 },
+    "quests": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/quest" }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": { "$ref": "#/$defs/scene" }
+    },
+    "npcs": {
+      "type": "array",
+      "maxItems": 24,
+      "items": { "$ref": "#/$defs/npc" }
+    },
+    "rewards": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": { "$ref": "#/$defs/reward" }
+    }
+  },
+  "$defs": {
+    "condition": { "enum": ["watched", "tired", "inspired", "marked", "hidden"] },
+    "quest": {
+      "type": "object",
+      "required": ["id", "title", "max_progress"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "max_progress": { "type": "integer", "minimum": 1, "maximum": 12 }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "required": ["id", "title", "skill", "dc", "quest_id", "reward", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "act": { "type": "string", "maxLength": 12 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "skill": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "dc": { "type": "integer", "minimum": 5, "maximum": 30 },
+        "quest_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "reward": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "text": { "type": "string", "maxLength": 280 }
+      }
+    },
+    "npc": {
+      "type": "object",
+      "required": ["id", "title", "role", "quest_id", "clue"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "role": { "type": "string", "maxLength": 80 },
+        "quest_id": { "type": "string", "maxLength": 64 },
+        "clue": { "type": "string", "maxLength": 180 }
+      }
+    },
+    "reward": {
+      "type": "object",
+      "required": ["id", "title", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "text": { "type": "string", "maxLength": 180 },
+        "items": { "type": "array", "maxItems": 4, "items": { "type": "string", "maxLength": 80 } },
+        "hp": { "type": "integer", "minimum": -10, "maximum": 10 },
+        "quest_id": { "type": "string", "maxLength": 64 },
+        "clue": { "type": "string", "maxLength": 140 },
+        "add": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
+        "clear": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+      }
+    }
+  }
+}
