@@ -4,6 +4,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8787';
 const STATIC_PLAY = import.meta.env.VITE_STATIC_PLAY === '1';
 const STORAGE_KEY = 'porchquest369.browserCampaign.v2';
 const LEGACY_STORAGE_KEY = 'porchquest369.browserCampaign.v1';
+const DM_SETTINGS_KEY = 'porchquest369.dmSettings.v1';
 
 const CLASS_PRESETS = {
   'Lantern-Seeker': {
@@ -40,17 +41,6 @@ const CLASS_PRESETS = {
   }
 };
 
-function StatPill({ label, value }) {
-  return <div className="stat-pill"><span>{label}</span><strong>{value}</strong></div>;
-}
-
-function Panel({ title, icon: Icon, children }) {
-  return <section className="panel">
-    <h2>{Icon ? <Icon size={18} /> : null}{title}</h2>
-    {children}
-  </section>;
-}
-
 const fallbackCampaign = {
   id: 'browser-demo',
   campaign_name: 'Lanterns Under Blackwood Hill',
@@ -75,25 +65,40 @@ const fallbackCampaign = {
     },
     edges: []
   },
+  flags: {},
   pending_patches: [],
   log: [{ role: 'dm', content: "Rain taps the roof of a porch that should not exist. Beyond the steps, Blackwood Hill glows with blue lanterns between the trees.\n\nA) Step toward Blackwood Hill.\nB) Question Old Joss.\nC) Inspect the porch.", ts: '' }]
 };
+
+function StatPill({ label, value }) {
+  return <div className="stat-pill"><span>{label}</span><strong>{value}</strong></div>;
+}
+
+function Panel({ title, icon: Icon, children }) {
+  return <section className="panel">
+    <h2>{Icon ? <Icon size={18} /> : null}{title}</h2>
+    {children}
+  </section>;
+}
 
 function cloneCampaign(seed = fallbackCampaign) {
   return JSON.parse(JSON.stringify(seed));
 }
 
 function normalizeCampaign(raw) {
-  const campaign = { ...cloneCampaign(), ...(raw || {}) };
-  campaign.player = { ...cloneCampaign().player, ...(raw?.player || {}) };
-  campaign.player.stats = { ...cloneCampaign().player.stats, ...(raw?.player?.stats || {}) };
-  campaign.player.skills = { ...cloneCampaign().player.skills, ...(raw?.player?.skills || {}) };
+  const base = cloneCampaign();
+  const campaign = { ...base, ...(raw || {}) };
+  campaign.player = { ...base.player, ...(raw?.player || {}) };
+  campaign.player.stats = { ...base.player.stats, ...(raw?.player?.stats || {}) };
+  campaign.player.skills = { ...base.player.skills, ...(raw?.player?.skills || {}) };
   campaign.player.inventory = raw?.player?.inventory || campaign.player.inventory || [];
   campaign.quests = raw?.quests || campaign.quests || [];
   campaign.world = raw?.world || campaign.world || { nodes: {}, edges: [] };
   campaign.world.nodes = campaign.world.nodes || {};
   campaign.world.edges = campaign.world.edges || [];
+  campaign.flags = raw?.flags || campaign.flags || {};
   campaign.pending_patches = raw?.pending_patches || [];
+  campaign.pending_world_patches = raw?.pending_world_patches || [];
   campaign.log = raw?.log || campaign.log || [];
   return campaign;
 }
@@ -113,6 +118,24 @@ function saveBrowserCampaign(campaign) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizeCampaign(campaign)));
   } catch (err) {
     console.warn('Could not save browser campaign', err);
+  }
+}
+
+function loadDmSettings() {
+  try {
+    const raw = localStorage.getItem(DM_SETTINGS_KEY);
+    if (raw) return { mode: 'browser', endpoint: '', ...JSON.parse(raw) };
+  } catch (err) {
+    console.warn('Could not load DM settings', err);
+  }
+  return { mode: 'browser', endpoint: '' };
+}
+
+function saveDmSettings(settings) {
+  try {
+    localStorage.setItem(DM_SETTINGS_KEY, JSON.stringify(settings));
+  } catch (err) {
+    console.warn('Could not save DM settings', err);
   }
 }
 
@@ -222,6 +245,35 @@ function applyPatch(world = {}, patch) {
   };
 }
 
+function applyCampaignUpdate(campaign, update = {}) {
+  const next = normalizeCampaign(campaign);
+  if (typeof update.location === 'string' && update.location.trim()) next.location = update.location.trim();
+  if (typeof update.hp_delta === 'number') {
+    next.player.hp = Math.max(0, Math.min((next.player.hp || 0) + update.hp_delta, next.player.hp_max || next.player.hp || 0));
+  }
+  if (Array.isArray(update.add_items)) {
+    const inv = new Set(next.player.inventory || []);
+    update.add_items.forEach((item) => item && inv.add(String(item)));
+    next.player.inventory = [...inv];
+  }
+  if (Array.isArray(update.remove_items)) {
+    const remove = new Set(update.remove_items.map(String));
+    next.player.inventory = (next.player.inventory || []).filter((item) => !remove.has(String(item)));
+  }
+  if (Array.isArray(update.quest_updates)) {
+    const quests = [...(next.quests || [])];
+    update.quest_updates.forEach((incoming) => {
+      if (!incoming?.id) return;
+      const idx = quests.findIndex((q) => q.id === incoming.id);
+      if (idx >= 0) quests[idx] = { ...quests[idx], ...incoming };
+      else quests.push({ type: 'side', status: 'open', ...incoming });
+    });
+    next.quests = quests;
+  }
+  if (update.flags && typeof update.flags === 'object') next.flags = { ...(next.flags || {}), ...update.flags };
+  return next;
+}
+
 function resolveBrowserTurn(campaign, action) {
   const profile = actionProfile(action, campaign);
   const roll = rollCheck({ expr: `1d20+${profile.mod}`, mod: profile.mod, dc: profile.dc, label: profile.label });
@@ -242,6 +294,35 @@ function resolveBrowserTurn(campaign, action) {
   return { campaign: next, roll };
 }
 
+function normalizeCustomPatches(raw) {
+  const patches = Array.isArray(raw) ? raw : [];
+  return patches.filter((patch) => patch?.type === 'upsert_node' && patch?.node?.id);
+}
+
+function mergeCustomTurnResult(campaign, action, payload) {
+  if (payload?.campaign) {
+    return { campaign: normalizeCampaign(payload.campaign), roll: payload.roll || null };
+  }
+  const profile = actionProfile(action, campaign);
+  const roll = payload?.roll || rollCheck({ expr: `1d20+${profile.mod}`, mod: profile.mod, dc: profile.dc, label: profile.label });
+  const narrative = payload?.narrative || payload?.message || localNarration(action, roll);
+  const pending = normalizeCustomPatches(payload?.pending_patches);
+  const patchNote = pending.length ? `\n\nCanon proposals: ${pending.length} custom DM world update${pending.length === 1 ? '' : 's'} waiting for approval.` : '';
+  const base = applyCampaignUpdate(campaign, payload?.update || {});
+  const next = normalizeCampaign({
+    ...base,
+    turn: (base.turn || 0) + 1,
+    pending_patches: [...(base.pending_patches || []), ...pending],
+    log: [
+      ...(base.log || []),
+      { role: 'player', content: action, ts: new Date().toISOString() },
+      { role: 'dm', content: `${narrative}${patchNote}`, ts: new Date().toISOString() }
+    ]
+  });
+  saveBrowserCampaign(next);
+  return { campaign: next, roll };
+}
+
 export default function App({ icons }) {
   const { Dice5, ScrollText, Backpack, Map, Sparkles } = icons;
   const [campaign, setCampaign] = useState(null);
@@ -249,6 +330,8 @@ export default function App({ icons }) {
   const [status, setStatus] = useState('Loading...');
   const [lastRoll, setLastRoll] = useState(null);
   const [apiOnline, setApiOnline] = useState(false);
+  const [dmBackend, setDmBackend] = useState(null);
+  const [dmSettings, setDmSettings] = useState(loadDmSettings());
   const [characterDraft, setCharacterDraft] = useState({ name: 'Mikey', class_name: 'Lantern-Seeker', background: 'Porch-Touched' });
 
   async function api(path, options = {}) {
@@ -267,6 +350,20 @@ export default function App({ icons }) {
     setStatus(message);
   }
 
+  async function refreshDmStatus() {
+    if (STATIC_PLAY || !apiOnline) {
+      setDmBackend({ mode: dmSettings.mode === 'custom' ? 'custom_endpoint' : 'browser_oracle', configured: dmSettings.mode === 'custom' && !!dmSettings.endpoint, model: 'browser-local' });
+      return;
+    }
+    try {
+      const result = await api('/api/dm/status');
+      setDmBackend(result.dm);
+    } catch (err) {
+      console.warn('Could not load DM status', err);
+      setDmBackend({ mode: 'unknown', configured: false, model: 'local fallback' });
+    }
+  }
+
   async function ensureCampaign() {
     if (STATIC_PLAY) {
       setApiOnline(false);
@@ -280,6 +377,8 @@ export default function App({ icons }) {
     try {
       await api('/api/health');
       setApiOnline(true);
+      const statusResult = await api('/api/dm/status');
+      setDmBackend(statusResult.dm);
       const list = await api('/api/campaigns');
       if (list.campaigns?.length) {
         const loaded = await api(`/api/campaigns/${list.campaigns[0].id}`);
@@ -303,11 +402,34 @@ export default function App({ icons }) {
   }
 
   useEffect(() => { ensureCampaign(); }, []);
+  useEffect(() => { refreshDmStatus(); }, [apiOnline, dmSettings.mode, dmSettings.endpoint]);
 
   async function submitAction(e) {
     e.preventDefault();
     const clean = action.trim();
     if (!clean || !campaign) return;
+
+    if ((STATIC_PLAY || !apiOnline) && dmSettings.mode === 'custom' && dmSettings.endpoint.trim()) {
+      setStatus('Calling custom DM endpoint...');
+      try {
+        const res = await fetch(dmSettings.endpoint.trim(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contract: 'porchquest369-browser-dm-v0.3', campaign: normalizeCampaign(campaign), action: clean })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const payload = await res.json();
+        const result = mergeCustomTurnResult(campaign, clean, payload);
+        setCampaign(result.campaign);
+        setLastRoll(result.roll);
+        setAction('');
+        setStatus('Custom DM turn resolved.');
+        return;
+      } catch (err) {
+        console.warn(err);
+        setStatus('Custom DM failed; using browser oracle fallback.');
+      }
+    }
 
     if (STATIC_PLAY || !apiOnline) {
       const result = resolveBrowserTurn(campaign, clean);
@@ -319,11 +441,12 @@ export default function App({ icons }) {
     }
 
     setStatus('Resolving turn...');
-    const result = await api(`/api/campaigns/${campaign.id}/turn`, { method: 'POST', body: JSON.stringify({ action: clean }) });
+    const result = await api(`/api/campaigns/${campaign.id}/turn`, { method: 'POST', body: JSON.stringify({ action: clean, allow_ai: true }) });
     setCampaign(normalizeCampaign(result.campaign));
+    setDmBackend(result.dm_backend || dmBackend);
     setLastRoll(result.roll);
     setAction('');
-    setStatus('Your move.');
+    setStatus(result.dm_backend?.mode === 'ai' ? 'AI DM resolved the turn.' : 'Local DM resolved the turn.');
   }
 
   async function rollD20() {
@@ -377,6 +500,14 @@ export default function App({ icons }) {
       ]
     });
     commitCampaign(next, 'Character ledger updated.');
+  }
+
+  function saveDmPanel(e) {
+    e.preventDefault();
+    const next = { mode: dmSettings.mode, endpoint: dmSettings.endpoint.trim() };
+    setDmSettings(next);
+    saveDmSettings(next);
+    setStatus('DM settings saved. No API keys are stored here.');
   }
 
   function approvePatch(patchId) {
@@ -451,6 +582,13 @@ export default function App({ icons }) {
   const log = campaign?.log || [];
   const pendingPatches = campaign?.pending_patches || [];
   const worldNodes = useMemo(() => Object.values(campaign?.world?.nodes || {}), [campaign]);
+  const dmLabel = dmBackend?.mode === 'ai'
+    ? `AI DM · ${dmBackend.model}`
+    : dmSettings.mode === 'custom'
+      ? 'Custom browser endpoint'
+      : apiOnline
+        ? 'Server local fallback'
+        : 'Browser oracle fallback';
 
   return <div className="app-shell">
     <header className="hero">
@@ -463,7 +601,7 @@ export default function App({ icons }) {
         <Sparkles size={22} />
         <strong>{campaign?.campaign_name || 'Loading campaign...'}</strong>
         <span>{status}</span>
-        <em>{apiOnline ? 'Server campaign' : 'Browser campaign'}</em>
+        <em>{apiOnline ? dmLabel : `Browser campaign · ${dmLabel}`}</em>
       </div>
     </header>
 
@@ -483,6 +621,19 @@ export default function App({ icons }) {
       </section>
 
       <aside className="sidebar">
+        <Panel title="DM Engine" icon={Sparkles}>
+          <p className="engine-status"><strong>{dmLabel}</strong><span>{dmBackend?.configured ? 'configured' : 'fallback ready'}</span></p>
+          <form className="stack" onSubmit={saveDmPanel}>
+            <label>Browser DM mode<select value={dmSettings.mode} onChange={(e) => setDmSettings({ ...dmSettings, mode: e.target.value })}>
+              <option value="browser">Browser oracle fallback</option>
+              <option value="custom">Custom DM endpoint</option>
+            </select></label>
+            <label>Custom endpoint URL<input value={dmSettings.endpoint} onChange={(e) => setDmSettings({ ...dmSettings, endpoint: e.target.value })} placeholder="https://your-dm-endpoint.example/turn" /></label>
+            <button type="submit" className="ghost">Save DM settings</button>
+          </form>
+          <p className="muted">Never paste API keys here. The public Pages app only stores an endpoint URL; model keys belong behind your own server.</p>
+        </Panel>
+
         <Panel title="Character" icon={Dice5}>
           <h3>{player.name} · Lv {player.level} {player.class_name}</h3>
           <p className="muted">Background: {player.background || 'Porch-Touched'}</p>
