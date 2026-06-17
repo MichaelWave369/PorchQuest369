@@ -97,12 +97,12 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Status: landed and hardened through v0.8.3.
+Status: landed and hardened through v0.8.4.
 
-- public Pages entrypoint switched to AppV10, AppV12, AppV13, then AppV14
-- browser studio localStorage route-pack migration through v6
+- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, then AppV15
+- browser studio localStorage route-pack migration through v7
 - contributor-safe route-pack JSON format
-- formal route-pack schema file
+- formal route-pack schema file with optional route `edges`
 - reviewed `content-packs/` starter pack folder
 - public reviewed-pack index under `apps/web/public/content-packs/`
 - route-pack validation and normalization
@@ -111,24 +111,28 @@ Status: landed and hardened through v0.8.3.
 - scene editor UI
 - NPC editor UI
 - reward editor UI
+- route edge editor for explicit scene-to-scene links
 - validation badges for pass/warning/error and pack counts
 - per-card validation highlights
 - field-level validation badges
 - multiple reviewed content packs
 - optional backend content-pack loader through `GET /api/content-packs`
 - backend content-pack save endpoint through `POST /api/content-packs/{pack_id}/save`
-- route flow graph for scenes and quests
+- safer backend write-mode gating with `PORCHQUEST_ALLOW_PACK_WRITES=1`
+- route flow graph for scenes, quests, and route edges
 - Studio edit/playtest mode toggle
 - exportable playtest transcript receipts
+- reviewed-pack promotion checklist
+- GitHub Pages content-pack gallery polish
 - Campaign Studio docs for contributor workflow and content boundaries
 
-## v0.8.4 — next focus
+## v0.8.5 — next focus
 
-- route edge editor for explicit scene-to-scene links
-- schema validation against `schemas/route-pack.schema.json`
-- reviewed-pack promotion checklist
-- safer backend write-mode gating
-- GitHub Pages content-pack gallery polish
+- schema-file validation beyond the lightweight helper pass
+- reviewed-pack approval receipts
+- route graph drag/drop polish
+- backend PR/branch packaging for submitted packs
+- content-pack gallery filters and search
 
 ## v0.9 — deeper character builder
 
