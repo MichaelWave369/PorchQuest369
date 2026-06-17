@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './v22.css';
 import './v23.css';
-import AppV23 from './AppV23.jsx';
+import './v24.css';
+import AppV24 from './AppV24.jsx';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AppV23 />
+    <AppV24 />
   </React.StrictMode>
 );
