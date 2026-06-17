@@ -1,0 +1,40 @@
+{
+  "schema": "porchquest.route_pack.v1",
+  "id": "fixture-valid-pack",
+  "title": "Fixture Valid Pack",
+  "summary": "Minimal valid pack for schema validation checks.",
+  "quests": [
+    { "id": "q1", "title": "Light the Porch", "max": 2 }
+  ],
+  "scenes": [
+    {
+      "id": "s1",
+      "act": "I",
+      "title": "Porch Step",
+      "text": "A lantern waits on the first step.",
+      "skill": "wisdom",
+      "dc": 10,
+      "quest_id": "q1",
+      "reward": "first clue"
+    },
+    {
+      "id": "s2",
+      "act": "I",
+      "title": "Open Gate",
+      "text": "The gate opens toward a safe trail.",
+      "skill": "dexterity",
+      "dc": 11,
+      "quest_id": "q1",
+      "reward": "trail mark"
+    }
+  ],
+  "npcs": [
+    { "id": "n1", "name": "Lantern Friend", "role": "helper", "quest_id": "q1", "clue": "The first light points home." }
+  ],
+  "rewards": [
+    { "id": "r1", "title": "Small Lantern", "text": "Gain a small lantern.", "items": ["small lantern"], "hp": 1, "quest_id": "q1", "clue": "Light reveals the trail.", "conditions": [] }
+  ],
+  "edges": [
+    { "from": "s1", "to": "s2", "label": "follow the light", "condition": "lantern lit" }
+  ]
+}
