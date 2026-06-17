@@ -174,7 +174,7 @@ Status: landed and hardened through v0.9.4.
 
 ## v1.0 — player mode
 
-Status: landed and hardened through v1.0.3.
+Status: landed and hardened through v1.0.4.
 
 - public page defaults to `Play Adventure` instead of Creator Studio
 - character selection with four presets
@@ -202,8 +202,13 @@ Status: landed and hardened through v1.0.3.
 - v1.0.3 route choice cards with destination and condition details
 - v1.0.3 wider adventure receipt panel with End Session and Download controls
 - v1.0.3 visited-scene count on the player sheet
+- v1.0.4 generated safe route choices from scene order when a pack has no valid authored edges
+- v1.0.4 route choices stay locked until Roll, Ask, and Reward are complete
+- v1.0.4 Last table note panel mirrors the newest receipt entry
+- v1.0.4 missing helper or reward cards can mark turn steps complete with receipt notes
+- v1.0.4 export feedback stores the most recent downloaded receipt metadata
 
-## v1.0.4 — next focus
+## v1.0.5 — next focus
 
 - improve scene outcome copy for success, partial success, and complication
 - add a route ending screen
