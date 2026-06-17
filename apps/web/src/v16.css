@@ -1,0 +1,10 @@
+.studio-v16 > .hero { border-bottom: 1px solid rgba(255,255,255,.14); }
+.v16-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: start; }
+.issue-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.issue { border: 1px solid rgba(255,255,255,.12); border-radius: .75rem; padding: .55rem .7rem; margin: .35rem 0; }
+.issue.ok { background: rgba(95, 210, 140, .12); }
+.issue.warn { background: rgba(255, 210, 115, .12); }
+.issue.error { background: rgba(255, 105, 105, .14); }
+.route-edge.reorder { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) auto; }
+.gallery .form-grid { margin-bottom: 1rem; }
+@media (max-width: 760px) { .v16-grid, .issue-grid { grid-template-columns: 1fr; } .route-edge.reorder { grid-template-columns: 1fr; } }
