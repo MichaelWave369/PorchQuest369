@@ -1,0 +1,6 @@
+.player-v102 .route-health{display:grid;gap:.3rem;margin-top:1rem;padding:.9rem;border:1px solid rgba(135,160,210,.25);border-radius:14px;background:rgba(255,255,255,.035)}
+.player-v102 .route-health.good{border-color:rgba(124,255,157,.45);background:rgba(44,114,70,.15)}
+.player-v102 .route-health.warn{border-color:rgba(255,217,143,.5);background:rgba(142,104,42,.15)}
+.player-v102 .route-health.bad{border-color:rgba(255,120,120,.5);background:rgba(142,42,42,.15)}
+.player-v102 .selection-summary{display:grid;gap:.3rem;margin:1rem 0;padding:1rem;border:1px solid rgba(255,217,143,.38);border-radius:16px;background:rgba(255,217,143,.08)}
+.player-v102 .selection-summary b{color:#ffe1a6}.player-v102 .start-big{width:100%;justify-content:center;text-align:center}.player-v102 .intro-panel{grid-column:1/-1;border-color:rgba(255,217,143,.35);background:linear-gradient(135deg,rgba(68,50,24,.35),rgba(18,31,48,.7))}.player-v102 .hero-badge small{display:block;margin-top:.35rem;color:#ffd98f;text-transform:uppercase;letter-spacing:.08em}.player-v102 .gallery-mini small{color:#c7d4ff}.player-v102 .active-run{grid-template-columns:1.05fr .8fr .8fr}.player-v102 .scene-panel{grid-column:auto}.player-v102 .route-choice small{justify-self:start}@media(max-width:980px){.player-v102 .active-run{grid-template-columns:1fr}.player-v102 .intro-panel{grid-column:auto}}
