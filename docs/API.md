@@ -6,15 +6,20 @@ Default base URL: `http://127.0.0.1:8787`
 
 Returns service status and API version.
 
-## `GET /api/content-packs`
+## Content pack API
 
-Lists reviewed route packs available to the API host.
+### `GET /api/content-packs`
 
-Response shape:
+Lists reviewed route packs available to the API host. v0.8.4 also returns the backend write-gate status.
 
 ```json
 {
   "schema": "porchquest.reviewed_pack_index.v1",
+  "write_gate": {
+    "enabled": false,
+    "env": "PORCHQUEST_ALLOW_PACK_WRITES",
+    "message": "Reviewed pack writes require PORCHQUEST_ALLOW_PACK_WRITES=1."
+  },
   "packs": [
     {
       "id": "blackwood-starter",
@@ -26,11 +31,9 @@ Response shape:
 }
 ```
 
-## `GET /api/content-packs/{pack_id}`
+### `GET /api/content-packs/{pack_id}`
 
 Loads one reviewed route pack by ID.
-
-Response shape:
 
 ```json
 {
@@ -40,14 +43,21 @@ Response shape:
     "quests": [],
     "scenes": [],
     "npcs": [],
-    "rewards": []
+    "rewards": [],
+    "edges": []
   }
 }
 ```
 
-## `POST /api/content-packs/{pack_id}/save`
+### `POST /api/content-packs/{pack_id}/save`
 
-Saves a route pack into the backend `content-packs/` folder. This is intended for trusted local/dev authoring, not an unprotected public write route.
+Saves a route pack into the backend `content-packs/` folder. This is intended for trusted local/dev authoring only.
+
+By default this route returns `403`. To enable it for trusted local editing:
+
+```bash
+PORCHQUEST_ALLOW_PACK_WRITES=1 uvicorn porchquest.main:app --reload
+```
 
 Request shape:
 
@@ -60,12 +70,13 @@ Request shape:
     "quests": [],
     "scenes": [],
     "npcs": [],
-    "rewards": []
+    "rewards": [],
+    "edges": []
   }
 }
 ```
 
-Response shape:
+Success response shape:
 
 ```json
 {
@@ -73,16 +84,27 @@ Response shape:
     "ok": true,
     "id": "example-pack",
     "path": "content-packs/example-pack.route-pack.json",
+    "write_gate": { "enabled": true },
     "pack": {}
   }
 }
 ```
 
-## `GET /api/dm/status`
+Blocked response shape:
+
+```json
+{
+  "detail": "Route pack writes are disabled. Set PORCHQUEST_ALLOW_PACK_WRITES=1 for trusted local/backend editing."
+}
+```
+
+## DM adapter API
+
+### `GET /api/dm/status`
 
 Returns the configured DM adapter mode.
 
-## `POST /api/dm/test`
+### `POST /api/dm/test`
 
 Runs a safe DM adapter test without saving a campaign.
 
@@ -92,11 +114,13 @@ Runs a safe DM adapter test without saving a campaign.
 }
 ```
 
-## `GET /api/campaigns`
+## Campaign API
+
+### `GET /api/campaigns`
 
 Lists saved campaigns.
 
-## `POST /api/campaigns`
+### `POST /api/campaigns`
 
 Creates a new campaign.
 
@@ -109,11 +133,11 @@ Creates a new campaign.
 
 New campaigns use the portable adventure shape: quest progress/clues, NPC dictionary, active scene, active encounter, pending canon patches, ending receipt, and player condition tags.
 
-## `GET /api/campaigns/{campaign_id}`
+### `GET /api/campaigns/{campaign_id}`
 
 Loads a campaign. Older server saves are migrated into the current adventure shape when loaded.
 
-## `POST /api/campaigns/{campaign_id}/sync_from_client`
+### `POST /api/campaigns/{campaign_id}/sync_from_client`
 
 Explicitly replaces a server campaign with a browser campaign payload. This supports the Pages app's **Save to Server** button.
 
@@ -129,28 +153,19 @@ Explicitly replaces a server campaign with a browser campaign payload. This supp
 }
 ```
 
-Response:
-
-```json
-{
-  "campaign": {},
-  "sync": {
-    "ok": true,
-    "source": "client",
-    "campaign_id": "browser-blackwood-hill"
-  }
-}
-```
-
 The endpoint stores the submitted campaign under the URL `{campaign_id}`. It is explicit on purpose; the browser does not silently overwrite server state.
 
-## `POST /api/campaigns/{campaign_id}/turn`
+### `POST /api/campaigns/{campaign_id}/reward/draw`
+
+Draws and applies a backend reward to a saved campaign.
+
+### `POST /api/campaigns/{campaign_id}/turn`
 
 Submits a freeform player action.
 
 ```json
 {
-  "action": "I sneak toward the blue lantern.",
+  "action": "I inspect the route mark.",
   "manual_roll": null,
   "allow_ai": true
 }
@@ -158,106 +173,17 @@ Submits a freeform player action.
 
 The turn engine can apply quest progress, quest clues, NPC updates, inventory changes, HP changes, and condition tags such as `tired`, `watched`, `marked`, `hidden`, and `inspired`.
 
-## `POST /api/campaigns/{campaign_id}/roll`
+### Other campaign endpoints
 
-Rolls dice.
-
-```json
-{
-  "expr": "1d20+3",
-  "dc": 12,
-  "label": "Stealth"
-}
-```
-
-## `POST /api/campaigns/{campaign_id}/world_patch`
-
-Applies an approved world patch.
-
-```json
-{
-  "world_patch": {
-    "append_facts": [
-      {"id": "blackwood_hill", "facts": ["A hidden stair was found beneath the roots."]}
-    ]
-  }
-}
-```
-
-## Adventure parity endpoints
-
-These endpoints mirror the instant-play GitHub Pages loop so hosted/server play can run the same starter-adventure structure.
-
-### `GET /api/campaigns/{campaign_id}/adventure_state`
-
-Returns the current starter-adventure state: in motion, hot thread, finale ready, or complete.
-
-### `POST /api/campaigns/{campaign_id}/scene/draw`
-
-Draws a structured scene card and saves it as `active_scene`.
-
-### `POST /api/campaigns/{campaign_id}/scene/resolve`
-
-Resolves the active scene choice.
-
-```json
-{
-  "choice_index": 0
-}
-```
-
-Successful choices add rewards, quest progress, clues, and optional pending canon patches. Failed choices keep the story playable but can cost HP or add a condition.
-
-### `POST /api/campaigns/{campaign_id}/encounter/draw`
-
-Draws a lightweight encounter card and saves it as `active_encounter`.
-
-### `POST /api/campaigns/{campaign_id}/encounter/resolve`
-
-Resolves the active encounter.
-
-```json
-{
-  "skill": "perception"
-}
-```
-
-Omit `skill` to use the encounter's default skill.
-
-### `POST /api/campaigns/{campaign_id}/npc/meet`
-
-Draws or reintroduces an NPC card and stores it in the campaign NPC ledger.
-
-### `POST /api/campaigns/{campaign_id}/npc/{npc_id}/ask`
-
-Asks a known NPC for help. This can increase trust, add a clue, add an item, and grant the `inspired` condition.
-
-### `POST /api/campaigns/{campaign_id}/camp`
-
-Runs the camp/rest action. It restores HP, clears `tired`/`marked`, may add `inspired`, and logs a rest receipt.
-
-### `POST /api/campaigns/{campaign_id}/finale`
-
-Records a full or partial ending depending on quest readiness. Full finale requires the three starter threads to be ready.
-
-### `POST /api/campaigns/{campaign_id}/reward/draw`
-
-Draws a small reward card, applies its effects, saves the campaign, and returns both the reward and updated campaign.
-
-Reward effects may add an item, move a quest thread forward, add a clue, restore a little HP, add a condition, clear a condition, and record a reward receipt.
-
-Response shape:
-
-```json
-{
-  "reward": {
-    "id": "blue_thread",
-    "title": "Blue Thread"
-  },
-  "campaign": {}
-}
-```
-
-## `GET /api/campaigns/{campaign_id}/questpack`
-
-Exports a simple quest-pack view of the campaign world.
+- `POST /api/campaigns/{campaign_id}/roll`
+- `POST /api/campaigns/{campaign_id}/world_patch`
+- `GET /api/campaigns/{campaign_id}/questpack`
+- `GET /api/campaigns/{campaign_id}/adventure_state`
+- `POST /api/campaigns/{campaign_id}/scene/draw`
+- `POST /api/campaigns/{campaign_id}/scene/resolve`
+- `POST /api/campaigns/{campaign_id}/encounter/draw`
+- `POST /api/campaigns/{campaign_id}/encounter/resolve`
+- `POST /api/campaigns/{campaign_id}/npc/meet`
+- `POST /api/campaigns/{campaign_id}/npc/{npc_id}/ask`
+- `POST /api/campaigns/{campaign_id}/camp`
+- `POST /api/campaigns/{campaign_id}/finale`
