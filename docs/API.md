@@ -6,6 +6,45 @@ Default base URL: `http://127.0.0.1:8787`
 
 Returns service status and API version.
 
+## `GET /api/content-packs`
+
+Lists reviewed route packs available to the API host.
+
+Response shape:
+
+```json
+{
+  "schema": "porchquest.reviewed_pack_index.v1",
+  "packs": [
+    {
+      "id": "blackwood-starter",
+      "title": "Lanterns Under Blackwood Hill",
+      "summary": "Reviewed starter route pack for Campaign Studio.",
+      "path": "content-packs/blackwood-starter.route-pack.json"
+    }
+  ]
+}
+```
+
+## `GET /api/content-packs/{pack_id}`
+
+Loads one reviewed route pack by ID.
+
+Response shape:
+
+```json
+{
+  "pack": {
+    "schema": "porchquest.route_pack.v1",
+    "id": "blackwood-starter",
+    "quests": [],
+    "scenes": [],
+    "npcs": [],
+    "rewards": []
+  }
+}
+```
+
 ## `GET /api/dm/status`
 
 Returns the configured DM adapter mode.
