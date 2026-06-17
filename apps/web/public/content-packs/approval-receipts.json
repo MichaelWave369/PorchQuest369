@@ -1,0 +1,26 @@
+{
+  "schema": "porchquest.approval_receipt_timeline.v1",
+  "receipts": [
+    {
+      "pack_id": "blackwood-starter",
+      "title": "Lanterns Under Blackwood Hill",
+      "status": "reviewed",
+      "approved_at": "2026-06-17T00:00:00Z",
+      "summary": "Starter pack approved for public studio testing and baseline diff review."
+    },
+    {
+      "pack_id": "porch-market-day",
+      "title": "Porch Market Day",
+      "status": "reviewed",
+      "approved_at": "2026-06-17T00:00:00Z",
+      "summary": "Market pack approved for multi-pack gallery and reward workflow testing."
+    },
+    {
+      "pack_id": "porch-rain-archive",
+      "title": "Porch Rain Archive",
+      "status": "reviewed",
+      "approved_at": "2026-06-17T00:00:00Z",
+      "summary": "Archive pack approved for route edge, receipt, and diff-review testing."
+    }
+  ]
+}
