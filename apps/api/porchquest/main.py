@@ -6,14 +6,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .ai_adapter import adapter_status, ai_turn
+from .ai_adapter import adapter_status, ai_turn, dm_test_turn
 from .campaigns import default_campaign, list_campaigns, load_campaign, save_campaign
 from .dice import roll_expr
 from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.3.0")
+app = FastAPI(title="PorchQuest369 API", version="0.3.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -34,6 +34,10 @@ class TurnRequest(BaseModel):
     allow_ai: bool = True
 
 
+class DmTestRequest(BaseModel):
+    action: str = "Connection test: describe the porch in one sentence."
+
+
 class RollRequest(BaseModel):
     expr: str = "1d20"
     dc: Optional[int] = None
@@ -52,6 +56,14 @@ def health() -> Dict[str, Any]:
 @app.get("/api/dm/status")
 def dm_status() -> Dict[str, Any]:
     return {"dm": adapter_status()}
+
+
+@app.post("/api/dm/test")
+def dm_test(req: DmTestRequest) -> Dict[str, Any]:
+    try:
+        return dm_test_turn(req.action)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.get("/api/campaigns")
