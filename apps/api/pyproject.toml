@@ -1,0 +1,14 @@
+[project]
+name = "porchquest369-api"
+version = "0.1.0"
+description = "FastAPI backend for PorchQuest369"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.34.0",
+  "pydantic==2.10.4",
+  "python-dotenv==1.0.1"
+]
+
+[tool.ruff]
+line-length = 100
