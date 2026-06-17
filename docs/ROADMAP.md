@@ -97,9 +97,9 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Status: landed and hardened through v0.8.6.
+Status: landed and hardened through v0.8.7.
 
-- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, AppV16, then AppV17
+- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, AppV16, AppV17, then AppV18
 - browser studio localStorage route-pack migration through v7
 - contributor-safe route-pack JSON format
 - formal route-pack schema file with optional route `edges`
@@ -134,12 +134,17 @@ Status: landed and hardened through v0.8.6.
 - richer promotion review status labels
 - content-pack diff viewer against reviewed packs
 - reviewed-pack gallery thumbnails and status metadata
-- v0.8.6 package export docs
-
-## v0.8.7 — next focus
-
-- AppV17/AppV16 live state bridge without a manual sync button
+- live state bridge above the full editor stack
 - package zip manifest preview before download
 - approval receipt timeline view
-- schema validation test fixtures
+- schema validation fixtures
 - gallery sort controls and thumbnail polish
+- v0.8.7 live bridge docs
+
+## v0.8.8 — next focus
+
+- automated fixture checks for the valid and invalid schema packs
+- manifest checksum preview before zip export
+- approval receipt diff view against current pack
+- gallery favorites and recently used packs
+- maintainer review queue scaffold
