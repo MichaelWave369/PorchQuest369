@@ -12,9 +12,10 @@ from .campaigns import default_campaign, list_campaigns, load_campaign, save_cam
 from .dice import roll_expr
 from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
+from .rewards import draw_reward
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.6.1")
+app = FastAPI(title="PorchQuest369 API", version="0.7.2")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
@@ -269,6 +270,19 @@ def api_complete_finale(campaign_id: str) -> Dict[str, Any]:
     try:
         campaign = load_campaign(campaign_id)
         result = complete_finale(campaign)
+        save_campaign(campaign)
+        return result
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@app.post("/api/campaigns/{campaign_id}/reward/draw")
+def api_draw_reward(campaign_id: str) -> Dict[str, Any]:
+    try:
+        campaign = load_campaign(campaign_id)
+        result = draw_reward(campaign)
         save_campaign(campaign)
         return result
     except FileNotFoundError as e:
