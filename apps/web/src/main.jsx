@@ -5,10 +5,12 @@ import './v7.css';
 import './v8.css';
 import './v9.css';
 import './v10.css';
-import AppV10 from './AppV10.jsx';
+import './v11.css';
+import './v12.css';
+import AppV12 from './AppV12.jsx';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AppV10 />
+    <AppV12 />
   </React.StrictMode>
 );
