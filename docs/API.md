@@ -49,7 +49,7 @@ Explicitly replaces a server campaign with a browser campaign payload. This supp
 {
   "campaign": {
     "id": "browser-blackwood-hill",
-    "version": 6,
+    "version": 9,
     "name": "Lanterns Under Blackwood Hill",
     "conditions": ["inspired"],
     "pending_patches": []
@@ -167,6 +167,24 @@ Runs the camp/rest action. It restores HP, clears `tired`/`marked`, may add `ins
 ### `POST /api/campaigns/{campaign_id}/finale`
 
 Records a full or partial ending depending on quest readiness. Full finale requires the three starter threads to be ready.
+
+### `POST /api/campaigns/{campaign_id}/reward/draw`
+
+Draws a small reward card, applies its effects, saves the campaign, and returns both the reward and updated campaign.
+
+Reward effects may add an item, move a quest thread forward, add a clue, restore a little HP, add a condition, clear a condition, and record a reward receipt.
+
+Response shape:
+
+```json
+{
+  "reward": {
+    "id": "blue_thread",
+    "title": "Blue Thread"
+  },
+  "campaign": {}
+}
+```
 
 ## `GET /api/campaigns/{campaign_id}/questpack`
 
