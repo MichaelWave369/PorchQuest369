@@ -1,0 +1,9 @@
+.studio-v11 .studio-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.studio-v11 .editor-list{display:grid;gap:.85rem}
+.studio-v11 .edit-card{border:1px solid currentColor;border-radius:16px;padding:1rem;display:grid;gap:.65rem;opacity:.95}
+.studio-v11 label{display:grid;gap:.35rem;font-size:.9rem}
+.studio-v11 input,.studio-v11 select,.studio-v11 textarea{width:100%;border:1px solid currentColor;border-radius:10px;padding:.65rem;color:inherit;background:transparent}
+.studio-v11 textarea{min-height:84px;resize:vertical}
+.studio-v11 .json-box{min-height:180px;font-family:monospace}
+.studio-v11 .json-preview{max-height:420px;overflow:auto;border:1px solid currentColor;border-radius:14px;padding:1rem;font-size:.8rem}
+.studio-v11 .button-row{display:flex;flex-wrap:wrap;gap:.6rem}
