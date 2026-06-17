@@ -1,0 +1,61 @@
+{
+  "schema": "porchquest.questpack.v1",
+  "title": "Lanterns Under Blackwood Hill",
+  "tags": [
+    "starter",
+    "threshold-fantasy",
+    "cozy-mystery"
+  ],
+  "npcs": [
+    {
+      "name": "Old Joss",
+      "role": "Porchkeeper"
+    },
+    {
+      "name": "Mara Lanternwright",
+      "role": "Lantern-maker"
+    }
+  ],
+  "beats": [
+    {
+      "id": "enter",
+      "text": "Begin on the porch during rain."
+    },
+    {
+      "id": "key",
+      "text": "Discover the missing key is connected to Blackwood Hill."
+    },
+    {
+      "id": "lantern",
+      "text": "Follow the blue lantern road."
+    },
+    {
+      "id": "choice",
+      "text": "Choose whether to bargain, sneak, or descend."
+    }
+  ],
+  "tilemap_hint": {
+    "width": 16,
+    "height": 9,
+    "ascii": [
+      "################",
+      "#P.....L.......#",
+      "#..####....###.#",
+      "#..#..#....#...#",
+      "#..#..#....#...#",
+      "#..####....###.#",
+      "#......H.......#",
+      "#....S....E....#",
+      "################"
+    ],
+    "legend": {
+      "#": "wall",
+      ".": "floor",
+      "P": "porch",
+      "L": "lantern",
+      "H": "hill",
+      "S": "start",
+      "E": "exit"
+    }
+  }
+}
