@@ -1,0 +1,28 @@
+{
+  "schema": "porchquest.route_pack.v1",
+  "id": "porch-rain-archive",
+  "title": "Porch Rain Archive",
+  "summary": "A reviewed route pack about sorting rain notes, helping quiet archivists, and testing route-edge review flow.",
+  "quests": [
+    { "id": "q_rain_1", "title": "Open the rain archive", "max_progress": 4 },
+    { "id": "q_rain_2", "title": "Return three rain notes", "max_progress": 3 }
+  ],
+  "scenes": [
+    { "id": "archive_awning", "act": "I", "title": "Archive Awning", "skill": "perception", "dc": 11, "quest_id": "q_rain_1", "reward": "awning note", "text": "A dry awning covers a shelf of folded rain notes. Each note asks to be returned to the right porch hook." },
+    { "id": "silver_bucket", "act": "I", "title": "Silver Bucket", "skill": "insight", "dc": 12, "quest_id": "q_rain_2", "reward": "bucket clue", "text": "A silver bucket catches one drop at a time. The pattern points toward three misplaced notes." },
+    { "id": "window_catalog", "act": "II", "title": "Window Catalog", "skill": "history", "dc": 13, "quest_id": "q_rain_1", "reward": "catalog mark", "text": "A window catalog lists names, dates, and gentle weather signs. A missing entry waits for a careful hand." }
+  ],
+  "npcs": [
+    { "id": "ora_index", "title": "Ora Index", "role": "Archive Keeper", "quest_id": "q_rain_1", "clue": "Ora says the archive opens when every note is returned without rushing." },
+    { "id": "benji_drip", "title": "Benji Drip", "role": "Bucket Listener", "quest_id": "q_rain_2", "clue": "Benji can hear which note belongs to which hook." }
+  ],
+  "rewards": [
+    { "id": "dry_match", "title": "Dry Match", "text": "Gain a small item that keeps one clue dry.", "items": ["dry match"], "hp": 0, "quest_id": "q_rain_2", "clue": "The match label names the window catalog.", "add": ["inspired"], "clear": [] },
+    { "id": "warm_towel", "title": "Warm Towel", "text": "Restore 1 HP and clear tired.", "items": ["warm towel"], "hp": 1, "quest_id": "", "clue": "", "add": [], "clear": ["tired"] }
+  ],
+  "edges": [
+    { "from": "archive_awning", "to": "silver_bucket", "label": "follow the drops", "condition": "" },
+    { "from": "silver_bucket", "to": "window_catalog", "label": "match the notes", "condition": "" },
+    { "from": "window_catalog", "to": "archive_awning", "label": "file the receipt", "condition": "inspired" }
+  ]
+}
