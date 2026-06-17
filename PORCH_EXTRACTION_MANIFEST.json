@@ -1,0 +1,24 @@
+{
+  "name": "PorchQuest369 Seed Extraction",
+  "created_for": "public repo prep",
+  "source_file": "local Infinite Porch source file",
+  "included": [
+    "dice engine",
+    "campaign state",
+    "world ledger",
+    "prompt contracts",
+    "quest pack",
+    "React UI",
+    "FastAPI backend"
+  ],
+  "excluded": [
+    "private WELL data",
+    "API keys",
+    "RAG database",
+    "Tavily",
+    "ComfyUI",
+    "Bifrost",
+    "CustomTkinter desktop shell",
+    "music/XR/haptics/Kiwix/GBCBS systems"
+  ]
+}
