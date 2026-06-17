@@ -42,7 +42,7 @@ Status: landed and hardened.
 
 ## v0.4 — tabletop feel pass
 
-Status: first pass landed.
+Status: landed.
 
 - encounter cards with scene, stakes, skill DC, reward, and optional canon proposal
 - usable inventory actions
@@ -50,16 +50,27 @@ Status: first pass landed.
 - browser save migration to v3
 - v0.4 gameplay docs
 
+## v0.5 — starter adventure loop
+
+Status: first pass landed.
+
+- browser save migration to v4
+- scene deck / room deck with act labels, locations, choices, DCs, rewards, and quest movement
+- NPC cards with role, vibe, trust, and ask-for-help actions
+- camp/rest action with HP recovery and state receipt
+- adventure state panel for in-motion / hot thread / finale ready / complete
+- finale and partial-ending recorder for Blackwood Hill
+- styling for scene cards, NPC cards, trust rows, and ending cards
+
 Next hardening pass:
 
-- scene deck / room deck
-- NPC cards
-- rest/camp action
-- condition tags
-- simple win states for the Blackwood Hill starter adventure
-- backend parity for encounter and inventory endpoints
+- backend parity for scene, NPC, camp, and ending endpoints
+- condition tags such as watched, tired, inspired, marked, hidden
+- scene/encounter balancing pass
+- starter adventure content expansion
+- lightweight achievement receipts
 
-## v0.5 — campaign studio
+## v0.6 — campaign studio
 
 - world node editor
 - NPC editor
@@ -68,7 +79,7 @@ Next hardening pass:
 - export/import quest packs
 - campaign seed selector
 
-## v0.6 — deeper character builder
+## v0.7 — deeper character builder
 
 - point buy / standard array
 - background packages
@@ -77,7 +88,7 @@ Next hardening pass:
 - simple equipment kits
 - level-up receipts
 
-## v0.7 — multiplayer table mode
+## v0.8 — multiplayer table mode
 
 - local co-op session
 - multiple character sheets
