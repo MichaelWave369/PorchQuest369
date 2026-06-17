@@ -32,6 +32,11 @@
       "minItems": 1,
       "maxItems": 24,
       "items": { "$ref": "#/$defs/reward" }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 48,
+      "items": { "$ref": "#/$defs/edge" }
     }
   },
   "$defs": {
@@ -87,6 +92,17 @@
         "clue": { "type": "string", "maxLength": 140 },
         "add": { "type": "array", "items": { "$ref": "#/$defs/condition" } },
         "clear": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["from", "to", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "to": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "label": { "type": "string", "maxLength": 80 },
+        "condition": { "type": "string", "maxLength": 80 }
       }
     }
   }
