@@ -1,3 +1,3 @@
-import AppV26 from './AppV26.jsx';
+import AppV27 from './AppV27.jsx';
 
-export default AppV26;
+export default AppV27;
