@@ -6,6 +6,12 @@
       "title": "Lanterns Under Blackwood Hill",
       "summary": "Reviewed starter route pack for Campaign Studio.",
       "path": "content-packs/blackwood-starter.route-pack.json"
+    },
+    {
+      "id": "porch-market-day",
+      "title": "Porch Market Day",
+      "summary": "Reviewed market route pack for testing multi-pack import and fair-trade rewards.",
+      "path": "content-packs/porch-market-day.route-pack.json"
     }
   ]
 }
