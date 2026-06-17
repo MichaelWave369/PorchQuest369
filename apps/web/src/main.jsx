@@ -6,6 +6,7 @@ import './v23.css';
 import './v24.css';
 import './v28.css';
 import './v29.css';
+import './v30.css';
 import AppV24 from './AppV24.jsx';
 
 createRoot(document.getElementById('root')).render(
