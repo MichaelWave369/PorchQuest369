@@ -15,7 +15,7 @@
 
 ## v0.2 — instant browser table
 
-Status: first pass landed.
+Status: landed.
 
 - GitHub Pages static play mode
 - browser-only turn resolver
@@ -27,12 +27,23 @@ Status: first pass landed.
 
 ## v0.3 — AI DM adapter
 
-- provider interface
-- local model adapter
-- hosted model adapter
-- model output validator
-- manual approve/reject for world patches from generated output
-- safe prompt boundary for SRD-inspired play
+Status: first pass landed.
+
+- server-side OpenAI-compatible adapter
+- backend DM status endpoint
+- automatic fallback to deterministic local DM
+- browser DM settings panel
+- optional custom browser endpoint contract
+- no model keys in the public Pages app
+- docs for AI adapter setup and response shape
+
+Next hardening pass:
+
+- stronger model output validator
+- better conversion from generated world_patch JSON into the visible canon queue
+- endpoint test button in the DM Engine panel
+- clearer error receipts when an adapter fails
+- sample local model recipe
 
 ## v0.4 — campaign studio
 
