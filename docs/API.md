@@ -35,11 +35,42 @@ Creates a new campaign.
 }
 ```
 
-New campaigns now use the v0.5-compatible shape: quest progress/clues, NPC dictionary, active scene, active encounter, pending canon patches, ending receipt, and player condition tags.
+New campaigns use the portable adventure shape: quest progress/clues, NPC dictionary, active scene, active encounter, pending canon patches, ending receipt, and player condition tags.
 
 ## `GET /api/campaigns/{campaign_id}`
 
-Loads a campaign. Older server saves are migrated into the v0.5 shape when loaded.
+Loads a campaign. Older server saves are migrated into the current adventure shape when loaded.
+
+## `POST /api/campaigns/{campaign_id}/sync_from_client`
+
+Explicitly replaces a server campaign with a browser campaign payload. This supports the Pages app's **Save to Server** button.
+
+```json
+{
+  "campaign": {
+    "id": "browser-blackwood-hill",
+    "version": 6,
+    "name": "Lanterns Under Blackwood Hill",
+    "conditions": ["inspired"],
+    "pending_patches": []
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "campaign": {},
+  "sync": {
+    "ok": true,
+    "source": "client",
+    "campaign_id": "browser-blackwood-hill"
+  }
+}
+```
+
+The endpoint stores the submitted campaign under the URL `{campaign_id}`. It is explicit on purpose; the browser does not silently overwrite server state.
 
 ## `POST /api/campaigns/{campaign_id}/turn`
 
@@ -53,7 +84,7 @@ Submits a freeform player action.
 }
 ```
 
-The turn engine can now apply quest progress, quest clues, NPC updates, inventory changes, HP changes, and condition tags such as `tired`, `watched`, `marked`, `hidden`, and `inspired`.
+The turn engine can apply quest progress, quest clues, NPC updates, inventory changes, HP changes, and condition tags such as `tired`, `watched`, `marked`, `hidden`, and `inspired`.
 
 ## `POST /api/campaigns/{campaign_id}/roll`
 
