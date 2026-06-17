@@ -77,33 +77,35 @@ Status: landed and hardened.
 
 ## v0.7 — content expansion pack
 
-Status: first pass landed.
+Status: landed and hardened through v0.7.2.
 
-- browser save migration to v7
+- browser save migration to v7, then v8, then v9
 - expanded scene deck
 - expanded encounter deck
 - expanded NPC helper deck
 - reward table for small discoveries, clues, and condition changes
 - lightweight receipt milestones
 - supplemental v0.7 styling
-- public Pages entrypoint switched to AppV7
-
-Next hardening pass:
-
-- backend reward-table parity
-- clearer quest-complete celebration panel
+- public Pages entrypoint switched through AppV7, AppV8, then AppV9
+- backend reward-table parity through `POST /api/campaigns/{campaign_id}/reward/draw`
+- quest-complete celebration panel
 - ending screen polish
-- route / mini-map tracker
+- compact route tracker
+- seed presets for replayable runs
+- route reset control
 - world-node detail drawer
 
 ## v0.8 — campaign studio
 
-- world node editor
-- NPC editor
+Next focus.
+
+- editable scene cards
+- editable NPC cards
 - quest builder
-- map/tile hint view
-- export/import quest packs
-- campaign seed selector
+- route pack export/import
+- contributor-safe content file format
+- campaign pack import
+- world node editor
 
 ## v0.9 — deeper character builder
 
