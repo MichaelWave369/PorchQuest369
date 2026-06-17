@@ -1,0 +1,133 @@
+{
+  "schema": "porchquest.route_pack.v1",
+  "id": "blackwood-starter",
+  "title": "Lanterns Under Blackwood Hill",
+  "summary": "A starter route pack for browser play and Campaign Studio editing.",
+  "quests": [
+    {
+      "id": "q_main_1",
+      "title": "Find the missing porch key",
+      "max_progress": 5
+    },
+    {
+      "id": "q_side_1",
+      "title": "Help the lantern-maker",
+      "max_progress": 4
+    },
+    {
+      "id": "q_mystery_1",
+      "title": "Learn why the hill doors remember",
+      "max_progress": 4
+    }
+  ],
+  "scenes": [
+    {
+      "id": "porch_threshold",
+      "act": "I",
+      "title": "Porch Threshold",
+      "skill": "perception",
+      "dc": 12,
+      "quest_id": "q_main_1",
+      "reward": "threshold clue",
+      "text": "A route mark waits under the porch rail."
+    },
+    {
+      "id": "left_trail",
+      "act": "I",
+      "title": "Left Trail",
+      "skill": "survival",
+      "dc": 12,
+      "quest_id": "q_side_1",
+      "reward": "trail clue",
+      "text": "A soft path bends toward a small helper sign."
+    },
+    {
+      "id": "name_gate",
+      "act": "II",
+      "title": "Name Gate",
+      "skill": "persuasion",
+      "dc": 13,
+      "quest_id": "q_mystery_1",
+      "reward": "name clue",
+      "text": "A quiet gate asks for a kind answer before it opens."
+    },
+    {
+      "id": "rain_library",
+      "act": "II",
+      "title": "Rain Library",
+      "skill": "arcana",
+      "dc": 14,
+      "quest_id": "q_mystery_1",
+      "reward": "record clue",
+      "text": "Shelves of wet paper keep a careful list of travelers."
+    },
+    {
+      "id": "candle_market",
+      "act": "III",
+      "title": "Candle Market",
+      "skill": "perception",
+      "dc": 14,
+      "quest_id": "q_main_1",
+      "reward": "blue map",
+      "text": "Blue light maps a safe way through the hill market."
+    }
+  ],
+  "npcs": [
+    {
+      "id": "old_joss",
+      "title": "Old Joss",
+      "role": "Porchkeeper",
+      "quest_id": "q_main_1",
+      "clue": "Old Joss marks the kind route."
+    },
+    {
+      "id": "mara_lanternwright",
+      "title": "Mara Lanternwright",
+      "role": "Lantern-maker",
+      "quest_id": "q_side_1",
+      "clue": "Mara reads the helper sign."
+    },
+    {
+      "id": "nix_understep",
+      "title": "Nix Understep",
+      "role": "Hill-runner",
+      "quest_id": "q_mystery_1",
+      "clue": "Nix explains the memory-door rule."
+    }
+  ],
+  "rewards": [
+    {
+      "id": "rest_token",
+      "title": "Rest Token",
+      "text": "Restore 1 HP and clear tired.",
+      "items": ["rest token"],
+      "hp": 1,
+      "quest_id": "",
+      "clue": "",
+      "add": [],
+      "clear": ["tired"]
+    },
+    {
+      "id": "blue_thread",
+      "title": "Blue Thread",
+      "text": "Progress the key route.",
+      "items": ["blue thread"],
+      "hp": 0,
+      "quest_id": "q_main_1",
+      "clue": "Blue thread points toward the key route.",
+      "add": [],
+      "clear": []
+    },
+    {
+      "id": "porch_coin",
+      "title": "Porch Coin",
+      "text": "Gain inspired.",
+      "items": ["porch coin"],
+      "hp": 0,
+      "quest_id": "",
+      "clue": "",
+      "add": ["inspired"],
+      "clear": []
+    }
+  ]
+}
