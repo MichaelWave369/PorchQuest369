@@ -97,9 +97,9 @@ Status: landed and hardened through v0.7.2.
 
 ## v0.8 — campaign studio
 
-Status: landed and hardened through v0.8.7.
+Status: landed and hardened through v0.8.8.
 
-- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, AppV16, AppV17, then AppV18
+- public Pages entrypoint switched to AppV10, AppV12, AppV13, AppV14, AppV15, AppV16, AppV17, AppV18, then AppV19
 - browser studio localStorage route-pack migration through v7
 - contributor-safe route-pack JSON format
 - formal route-pack schema file with optional route `edges`
@@ -140,11 +140,16 @@ Status: landed and hardened through v0.8.7.
 - schema validation fixtures
 - gallery sort controls and thumbnail polish
 - v0.8.7 live bridge docs
-
-## v0.8.8 — next focus
-
 - automated fixture checks for the valid and invalid schema packs
 - manifest checksum preview before zip export
 - approval receipt diff view against current pack
-- gallery favorites and recently used packs
 - maintainer review queue scaffold
+- v0.8.8 maintainer review bridge docs
+
+## v0.8.9 — next focus
+
+- object-level diff rows for changed scenes, NPCs, rewards, quests, and route edges
+- review queue actions: mark needs-work, ready, approved, archived
+- checksum receipt export
+- fixture test documentation with expected issue lists
+- optional PR branch helper packaging
