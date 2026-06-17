@@ -14,13 +14,13 @@ from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
 from .world_ledger import apply_world_patch
 
-app = FastAPI(title="PorchQuest369 API", version="0.5.1")
+app = FastAPI(title="PorchQuest369 API", version="0.6.1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
 
@@ -47,6 +47,10 @@ class RollRequest(BaseModel):
 
 class WorldPatchRequest(BaseModel):
     world_patch: Dict[str, Any]
+
+
+class ClientSyncRequest(BaseModel):
+    campaign: Dict[str, Any]
 
 
 class SceneChoiceRequest(BaseModel):
@@ -93,6 +97,26 @@ def get_campaign(campaign_id: str) -> Dict[str, Any]:
         return {"campaign": load_campaign(campaign_id)}
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+
+@app.post("/api/campaigns/{campaign_id}/sync_from_client")
+def sync_from_client(campaign_id: str, req: ClientSyncRequest) -> Dict[str, Any]:
+    """Replace a server campaign with a browser-exported campaign shape.
+
+    This is intentionally explicit instead of silently syncing on every request:
+    the player chooses when the local browser table becomes the server table.
+    """
+    campaign = dict(req.campaign or {})
+    if not campaign:
+        raise HTTPException(status_code=400, detail="Missing campaign payload.")
+    campaign["id"] = campaign_id
+    campaign.setdefault("version", 5)
+    campaign.setdefault("name", "Lanterns Under Blackwood Hill")
+    campaign.setdefault("story_log", [])
+    campaign.setdefault("pending_patches", [])
+    campaign.setdefault("conditions", [])
+    save_campaign(campaign)
+    return {"campaign": campaign, "sync": {"ok": True, "source": "client", "campaign_id": campaign_id}}
 
 
 @app.post("/api/campaigns/{campaign_id}/turn")
