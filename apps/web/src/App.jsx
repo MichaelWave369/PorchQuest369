@@ -67,6 +67,7 @@ const fallbackCampaign = {
   },
   flags: {},
   pending_patches: [],
+  pending_world_patches: [],
   log: [{ role: 'dm', content: "Rain taps the roof of a porch that should not exist. Beyond the steps, Blackwood Hill glows with blue lanterns between the trees.\n\nA) Step toward Blackwood Hill.\nB) Question Old Joss.\nC) Inspect the porch.", ts: '' }]
 };
 
@@ -85,6 +86,128 @@ function cloneCampaign(seed = fallbackCampaign) {
   return JSON.parse(JSON.stringify(seed));
 }
 
+function safeText(value, fallback = '') {
+  return String(value ?? fallback).trim();
+}
+
+function stablePatchId(prefix, value) {
+  const raw = safeText(value, prefix).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60);
+  return `${prefix}_${raw || 'patch'}`;
+}
+
+function normalizePendingPatch(raw, index = 0) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  if (raw.type === 'upsert_node' && raw.node?.id) {
+    const node = {
+      id: safeText(raw.node.id),
+      title: safeText(raw.node.title, raw.node.id),
+      summary: safeText(raw.node.summary),
+      type: safeText(raw.node.type, 'note'),
+      tags: Array.isArray(raw.node.tags) ? raw.node.tags.map(String) : [],
+      facts: Array.isArray(raw.node.facts) ? raw.node.facts.map(String) : []
+    };
+    return {
+      id: safeText(raw.id, stablePatchId('upsert', node.id)),
+      type: 'upsert_node',
+      node,
+      reason: safeText(raw.reason, 'DM proposed a new world node.')
+    };
+  }
+
+  if (raw.type === 'append_fact' && raw.node_id) {
+    const facts = Array.isArray(raw.facts) ? raw.facts.map(String).filter(Boolean) : [safeText(raw.fact)].filter(Boolean);
+    return {
+      id: safeText(raw.id, stablePatchId('fact', `${raw.node_id}_${facts.join('_') || index}`)),
+      type: 'append_fact',
+      node_id: safeText(raw.node_id),
+      facts,
+      title: safeText(raw.title, `Add fact to ${raw.node_id}`),
+      summary: facts.join(' '),
+      reason: safeText(raw.reason, 'DM proposed a fact update.')
+    };
+  }
+
+  if (raw.type === 'new_edge' && raw.edge) {
+    const edge = {
+      from: safeText(raw.edge.from),
+      to: safeText(raw.edge.to),
+      rel: safeText(raw.edge.rel, 'related')
+    };
+    if (!edge.from || !edge.to) return null;
+    return {
+      id: safeText(raw.id, stablePatchId('edge', `${edge.from}_${edge.rel}_${edge.to}`)),
+      type: 'new_edge',
+      edge,
+      title: `${edge.from} → ${edge.to}`,
+      summary: edge.rel,
+      reason: safeText(raw.reason, 'DM proposed a world relationship.')
+    };
+  }
+
+  return null;
+}
+
+function worldPatchToPendingPatches(raw) {
+  if (!raw || typeof raw !== 'object') return [];
+  if (raw.type) {
+    const normalized = normalizePendingPatch(raw);
+    return normalized ? [normalized] : [];
+  }
+
+  const patch = raw.world_patch && typeof raw.world_patch === 'object' ? raw.world_patch : raw;
+  const pending = [];
+
+  const upserts = Array.isArray(patch.upsert_nodes) ? patch.upsert_nodes : patch.upsert_nodes ? [patch.upsert_nodes] : [];
+  upserts.forEach((node, index) => {
+    const normalized = normalizePendingPatch({
+      id: stablePatchId('upsert', node?.id || node?.title || index),
+      type: 'upsert_node',
+      node,
+      reason: safeText(raw.reason, 'AI DM proposed this world node.')
+    }, index);
+    if (normalized) pending.push(normalized);
+  });
+
+  const appends = Array.isArray(patch.append_facts) ? patch.append_facts : patch.append_facts ? [patch.append_facts] : [];
+  appends.forEach((item, index) => {
+    const facts = Array.isArray(item?.facts) ? item.facts : item?.facts ? [item.facts] : [];
+    const normalized = normalizePendingPatch({
+      id: stablePatchId('fact', `${item?.id || item?.node_id || index}_${facts.join('_')}`),
+      type: 'append_fact',
+      node_id: item?.id || item?.node_id,
+      facts,
+      title: `Add fact to ${item?.id || item?.node_id || 'node'}`,
+      reason: safeText(raw.reason, 'AI DM proposed this fact update.')
+    }, index);
+    if (normalized) pending.push(normalized);
+  });
+
+  const edges = Array.isArray(patch.new_edges) ? patch.new_edges : patch.new_edges ? [patch.new_edges] : [];
+  edges.forEach((edge, index) => {
+    const normalized = normalizePendingPatch({
+      id: stablePatchId('edge', `${edge?.from || index}_${edge?.rel || 'related'}_${edge?.to || index}`),
+      type: 'new_edge',
+      edge,
+      reason: safeText(raw.reason, 'AI DM proposed this world edge.')
+    }, index);
+    if (normalized) pending.push(normalized);
+  });
+
+  return pending;
+}
+
+function dedupePatches(patches) {
+  const seen = new Set();
+  return (patches || []).filter((patch) => {
+    const normalized = normalizePendingPatch(patch);
+    if (!normalized || seen.has(normalized.id)) return false;
+    seen.add(normalized.id);
+    Object.assign(patch, normalized);
+    return true;
+  });
+}
+
 function normalizeCampaign(raw) {
   const base = cloneCampaign();
   const campaign = { ...base, ...(raw || {}) };
@@ -97,8 +220,14 @@ function normalizeCampaign(raw) {
   campaign.world.nodes = campaign.world.nodes || {};
   campaign.world.edges = campaign.world.edges || [];
   campaign.flags = raw?.flags || campaign.flags || {};
-  campaign.pending_patches = raw?.pending_patches || [];
-  campaign.pending_world_patches = raw?.pending_world_patches || [];
+
+  const pending = [
+    ...(raw?.pending_patches || []),
+    ...worldPatchToPendingPatches(raw?.world_patch),
+    ...(Array.isArray(raw?.pending_world_patches) ? raw.pending_world_patches.flatMap(worldPatchToPendingPatches) : worldPatchToPendingPatches(raw?.pending_world_patches))
+  ];
+  campaign.pending_patches = dedupePatches(pending);
+  campaign.pending_world_patches = [];
   campaign.log = raw?.log || campaign.log || [];
   return campaign;
 }
@@ -236,24 +365,41 @@ function proposeWorldPatches(action, world = {}) {
   return patches;
 }
 
-function applyPatch(world = {}, patch) {
-  if (!patch || patch.type !== 'upsert_node' || !patch.node?.id) return world;
-  return {
-    ...world,
-    nodes: { ...(world.nodes || {}), [patch.node.id]: patch.node },
-    edges: world.edges || []
-  };
+function applyPatch(world = {}, rawPatch) {
+  const patch = normalizePendingPatch(rawPatch);
+  if (!patch) return world;
+  const next = { ...world, nodes: { ...(world.nodes || {}) }, edges: [...(world.edges || [])] };
+
+  if (patch.type === 'upsert_node') {
+    next.nodes[patch.node.id] = { ...(next.nodes[patch.node.id] || {}), ...patch.node };
+  }
+
+  if (patch.type === 'append_fact' && patch.node_id) {
+    const node = next.nodes[patch.node_id] || { id: patch.node_id, title: patch.node_id, summary: '' };
+    const facts = new Set([...(node.facts || [])]);
+    (patch.facts || []).forEach((fact) => fact && facts.add(String(fact)));
+    next.nodes[patch.node_id] = { ...node, facts: [...facts] };
+  }
+
+  if (patch.type === 'new_edge' && patch.edge) {
+    const key = `${patch.edge.from}|${patch.edge.rel}|${patch.edge.to}`;
+    const existing = new Set(next.edges.map((edge) => `${edge.from}|${edge.rel}|${edge.to}`));
+    if (!existing.has(key)) next.edges.push(patch.edge);
+  }
+
+  return next;
 }
 
 function applyCampaignUpdate(campaign, update = {}) {
   const next = normalizeCampaign(campaign);
+  if (!update || typeof update !== 'object') return next;
   if (typeof update.location === 'string' && update.location.trim()) next.location = update.location.trim();
   if (typeof update.hp_delta === 'number') {
     next.player.hp = Math.max(0, Math.min((next.player.hp || 0) + update.hp_delta, next.player.hp_max || next.player.hp || 0));
   }
   if (Array.isArray(update.add_items)) {
     const inv = new Set(next.player.inventory || []);
-    update.add_items.forEach((item) => item && inv.add(String(item)));
+    update.add_items.slice(0, 20).forEach((item) => item && inv.add(String(item).slice(0, 80)));
     next.player.inventory = [...inv];
   }
   if (Array.isArray(update.remove_items)) {
@@ -262,11 +408,17 @@ function applyCampaignUpdate(campaign, update = {}) {
   }
   if (Array.isArray(update.quest_updates)) {
     const quests = [...(next.quests || [])];
-    update.quest_updates.forEach((incoming) => {
+    update.quest_updates.slice(0, 20).forEach((incoming) => {
       if (!incoming?.id) return;
-      const idx = quests.findIndex((q) => q.id === incoming.id);
-      if (idx >= 0) quests[idx] = { ...quests[idx], ...incoming };
-      else quests.push({ type: 'side', status: 'open', ...incoming });
+      const clean = {
+        id: safeText(incoming.id).slice(0, 80),
+        title: safeText(incoming.title, incoming.id).slice(0, 140),
+        type: safeText(incoming.type, 'side').slice(0, 40),
+        status: safeText(incoming.status, 'open').slice(0, 40)
+      };
+      const idx = quests.findIndex((q) => q.id === clean.id);
+      if (idx >= 0) quests[idx] = { ...quests[idx], ...clean };
+      else quests.push(clean);
     });
     next.quests = quests;
   }
@@ -294,20 +446,70 @@ function resolveBrowserTurn(campaign, action) {
   return { campaign: next, roll };
 }
 
-function normalizeCustomPatches(raw) {
-  const patches = Array.isArray(raw) ? raw : [];
-  return patches.filter((patch) => patch?.type === 'upsert_node' && patch?.node?.id);
+function normalizeRoll(raw, fallbackRoll) {
+  if (!raw || typeof raw !== 'object') return fallbackRoll;
+  const label = safeText(raw.label || raw.expr, fallbackRoll.label || 'DM Roll').slice(0, 80);
+  const detail = safeText(raw.detail, fallbackRoll.detail).slice(0, 160);
+  const outcome = safeText(raw.outcome, fallbackRoll.outcome).slice(0, 80);
+  return { ...fallbackRoll, ...raw, label, detail, outcome };
 }
 
-function mergeCustomTurnResult(campaign, action, payload) {
-  if (payload?.campaign) {
-    return { campaign: normalizeCampaign(payload.campaign), roll: payload.roll || null };
+function validateDmPayload(payload) {
+  const warnings = [];
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return { ok: false, error: 'DM response must be a JSON object.', warnings };
   }
+
+  if (payload.campaign && typeof payload.campaign !== 'object') {
+    return { ok: false, error: 'campaign must be an object when provided.', warnings };
+  }
+
+  if (!payload.campaign) {
+    if (!payload.narrative && !payload.message) warnings.push('No narrative/message returned; browser narration will be used.');
+    if (payload.update && typeof payload.update !== 'object') return { ok: false, error: 'update must be an object.' };
+    if (payload.pending_patches && !Array.isArray(payload.pending_patches)) return { ok: false, error: 'pending_patches must be an array.' };
+  }
+
+  if (typeof payload.narrative === 'string' && payload.narrative.length > 5000) {
+    payload = { ...payload, narrative: payload.narrative.slice(0, 5000) + '\n\n[Trimmed by PorchQuest369 guardrail.]' };
+    warnings.push('Narrative was trimmed to 5000 characters.');
+  }
+
+  return { ok: true, payload, warnings };
+}
+
+function dmPayloadToPendingPatches(payload) {
+  const pending = [
+    ...(Array.isArray(payload?.pending_patches) ? payload.pending_patches : []),
+    ...worldPatchToPendingPatches(payload?.world_patch),
+    ...(Array.isArray(payload?.pending_world_patches) ? payload.pending_world_patches.flatMap(worldPatchToPendingPatches) : worldPatchToPendingPatches(payload?.pending_world_patches))
+  ];
+  return dedupePatches(pending);
+}
+
+function mergeCustomTurnResult(campaign, action, rawPayload) {
   const profile = actionProfile(action, campaign);
-  const roll = payload?.roll || rollCheck({ expr: `1d20+${profile.mod}`, mod: profile.mod, dc: profile.dc, label: profile.label });
-  const narrative = payload?.narrative || payload?.message || localNarration(action, roll);
-  const pending = normalizeCustomPatches(payload?.pending_patches);
+  const fallbackRoll = rollCheck({ expr: `1d20+${profile.mod}`, mod: profile.mod, dc: profile.dc, label: profile.label });
+  const validation = validateDmPayload(rawPayload);
+  if (!validation.ok) throw new Error(validation.error);
+  const payload = validation.payload;
+
+  if (payload?.campaign) {
+    const normalized = normalizeCampaign(payload.campaign);
+    const roll = normalizeRoll(payload.roll, fallbackRoll);
+    const warningText = validation.warnings.length ? `\n\nDM warnings: ${validation.warnings.join(' ')}` : '';
+    if (warningText) {
+      normalized.log = [...(normalized.log || []), { role: 'dm', content: warningText.trim(), ts: new Date().toISOString() }];
+    }
+    saveBrowserCampaign(normalized);
+    return { campaign: normalized, roll, warnings: validation.warnings };
+  }
+
+  const roll = normalizeRoll(payload?.roll, fallbackRoll);
+  const narrative = safeText(payload?.narrative || payload?.message, localNarration(action, roll));
+  const pending = dmPayloadToPendingPatches(payload);
   const patchNote = pending.length ? `\n\nCanon proposals: ${pending.length} custom DM world update${pending.length === 1 ? '' : 's'} waiting for approval.` : '';
+  const warningText = validation.warnings.length ? `\n\nDM warnings: ${validation.warnings.join(' ')}` : '';
   const base = applyCampaignUpdate(campaign, payload?.update || {});
   const next = normalizeCampaign({
     ...base,
@@ -316,11 +518,11 @@ function mergeCustomTurnResult(campaign, action, payload) {
     log: [
       ...(base.log || []),
       { role: 'player', content: action, ts: new Date().toISOString() },
-      { role: 'dm', content: `${narrative}${patchNote}`, ts: new Date().toISOString() }
+      { role: 'dm', content: `${narrative}${patchNote}${warningText}`, ts: new Date().toISOString() }
     ]
   });
   saveBrowserCampaign(next);
-  return { campaign: next, roll };
+  return { campaign: next, roll, warnings: validation.warnings };
 }
 
 export default function App({ icons }) {
@@ -332,6 +534,7 @@ export default function App({ icons }) {
   const [apiOnline, setApiOnline] = useState(false);
   const [dmBackend, setDmBackend] = useState(null);
   const [dmSettings, setDmSettings] = useState(loadDmSettings());
+  const [dmTestStatus, setDmTestStatus] = useState('Not tested this session.');
   const [characterDraft, setCharacterDraft] = useState({ name: 'Mikey', class_name: 'Lantern-Seeker', background: 'Porch-Touched' });
 
   async function api(path, options = {}) {
@@ -352,7 +555,11 @@ export default function App({ icons }) {
 
   async function refreshDmStatus() {
     if (STATIC_PLAY || !apiOnline) {
-      setDmBackend({ mode: dmSettings.mode === 'custom' ? 'custom_endpoint' : 'browser_oracle', configured: dmSettings.mode === 'custom' && !!dmSettings.endpoint, model: 'browser-local' });
+      setDmBackend({
+        mode: dmSettings.mode === 'custom' ? 'custom_endpoint' : 'browser_oracle',
+        configured: dmSettings.mode === 'custom' && !!dmSettings.endpoint,
+        model: 'browser-local'
+      });
       return;
     }
     try {
@@ -404,6 +611,60 @@ export default function App({ icons }) {
   useEffect(() => { ensureCampaign(); }, []);
   useEffect(() => { refreshDmStatus(); }, [apiOnline, dmSettings.mode, dmSettings.endpoint]);
 
+  async function callCustomEndpoint(actionText, testOnly = false) {
+    const res = await fetch(dmSettings.endpoint.trim(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contract: testOnly ? 'porchquest369-browser-dm-v0.3-test' : 'porchquest369-browser-dm-v0.3',
+        campaign: normalizeCampaign(campaign || fallbackCampaign),
+        action: actionText
+      })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const payload = await res.json();
+    const validation = validateDmPayload(payload);
+    if (!validation.ok) throw new Error(validation.error);
+    return validation.payload;
+  }
+
+  async function testDmEngine() {
+    if (!campaign) return;
+
+    if (dmSettings.mode === 'custom') {
+      if (!dmSettings.endpoint.trim()) {
+        setDmTestStatus('Custom endpoint is empty.');
+        return;
+      }
+      setDmTestStatus('Testing custom endpoint...');
+      try {
+        const payload = await callCustomEndpoint('Connection test: describe the porch in one sentence.', true);
+        const pendingCount = dmPayloadToPendingPatches(payload).length;
+        setDmTestStatus(`Custom endpoint OK. ${pendingCount} canon proposal${pendingCount === 1 ? '' : 's'} detected.`);
+      } catch (err) {
+        console.warn(err);
+        setDmTestStatus(`Custom endpoint failed: ${String(err.message || err).slice(0, 180)}`);
+      }
+      return;
+    }
+
+    if (!STATIC_PLAY && apiOnline) {
+      setDmTestStatus('Testing server DM...');
+      try {
+        const result = await api('/api/dm/test', { method: 'POST', body: JSON.stringify({ action: 'Connection test: describe the porch in one sentence.' }) });
+        setDmBackend(result.dm || dmBackend);
+        setDmTestStatus(result.ok ? `Server DM OK: ${result.dm?.mode || 'ready'}` : 'Server DM test returned not ok.');
+      } catch (err) {
+        console.warn(err);
+        setDmTestStatus(`Server DM test failed: ${String(err.message || err).slice(0, 180)}`);
+      }
+      return;
+    }
+
+    const roll = rollCheck();
+    setDmTestStatus(`Browser oracle OK. Test roll: ${roll.detail} · ${roll.outcome}.`);
+  }
+
   async function submitAction(e) {
     e.preventDefault();
     const clean = action.trim();
@@ -412,22 +673,16 @@ export default function App({ icons }) {
     if ((STATIC_PLAY || !apiOnline) && dmSettings.mode === 'custom' && dmSettings.endpoint.trim()) {
       setStatus('Calling custom DM endpoint...');
       try {
-        const res = await fetch(dmSettings.endpoint.trim(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contract: 'porchquest369-browser-dm-v0.3', campaign: normalizeCampaign(campaign), action: clean })
-        });
-        if (!res.ok) throw new Error(await res.text());
-        const payload = await res.json();
+        const payload = await callCustomEndpoint(clean, false);
         const result = mergeCustomTurnResult(campaign, clean, payload);
         setCampaign(result.campaign);
         setLastRoll(result.roll);
         setAction('');
-        setStatus('Custom DM turn resolved.');
+        setStatus(result.warnings?.length ? 'Custom DM resolved with guardrail notes.' : 'Custom DM turn resolved.');
         return;
       } catch (err) {
         console.warn(err);
-        setStatus('Custom DM failed; using browser oracle fallback.');
+        setStatus(`Custom DM failed; using browser oracle fallback. ${String(err.message || err).slice(0, 120)}`);
       }
     }
 
@@ -442,11 +697,12 @@ export default function App({ icons }) {
 
     setStatus('Resolving turn...');
     const result = await api(`/api/campaigns/${campaign.id}/turn`, { method: 'POST', body: JSON.stringify({ action: clean, allow_ai: true }) });
-    setCampaign(normalizeCampaign(result.campaign));
+    const normalized = normalizeCampaign(result.campaign);
+    setCampaign(normalized);
     setDmBackend(result.dm_backend || dmBackend);
     setLastRoll(result.roll);
     setAction('');
-    setStatus(result.dm_backend?.mode === 'ai' ? 'AI DM resolved the turn.' : 'Local DM resolved the turn.');
+    setStatus(normalized.pending_patches?.length ? 'DM resolved the turn with canon proposals.' : (result.dm_backend?.mode === 'ai' ? 'AI DM resolved the turn.' : 'Local DM resolved the turn.'));
   }
 
   async function rollD20() {
@@ -510,6 +766,24 @@ export default function App({ icons }) {
     setStatus('DM settings saved. No API keys are stored here.');
   }
 
+  function patchTitle(patch) {
+    if (!patch) return 'World update';
+    if (patch.node?.title) return patch.node.title;
+    if (patch.title) return patch.title;
+    if (patch.edge) return `${patch.edge.from} → ${patch.edge.to}`;
+    if (patch.node_id) return `Fact update: ${patch.node_id}`;
+    return 'World update';
+  }
+
+  function patchSummary(patch) {
+    if (!patch) return '';
+    if (patch.node?.summary) return patch.node.summary;
+    if (patch.summary) return patch.summary;
+    if (patch.facts?.length) return patch.facts.join(' ');
+    if (patch.edge) return patch.edge.rel;
+    return '';
+  }
+
   function approvePatch(patchId) {
     if (!campaign) return;
     const patch = (campaign.pending_patches || []).find((p) => p.id === patchId);
@@ -518,7 +792,7 @@ export default function App({ icons }) {
       ...campaign,
       world: applyPatch(campaign.world, patch),
       pending_patches: (campaign.pending_patches || []).filter((p) => p.id !== patchId),
-      log: [...(campaign.log || []), { role: 'dm', content: `Canon approved: ${patch.node.title}.`, ts: new Date().toISOString() }]
+      log: [...(campaign.log || []), { role: 'dm', content: `Canon approved: ${patchTitle(patch)}.`, ts: new Date().toISOString() }]
     });
     commitCampaign(next, 'Canon patch approved.');
   }
@@ -529,7 +803,7 @@ export default function App({ icons }) {
     const next = normalizeCampaign({
       ...campaign,
       pending_patches: (campaign.pending_patches || []).filter((p) => p.id !== patchId),
-      log: patch ? [...(campaign.log || []), { role: 'dm', content: `Canon rejected: ${patch.node.title}.`, ts: new Date().toISOString() }] : campaign.log
+      log: patch ? [...(campaign.log || []), { role: 'dm', content: `Canon rejected: ${patchTitle(patch)}.`, ts: new Date().toISOString() }] : campaign.log
     });
     commitCampaign(next, 'Canon patch rejected.');
   }
@@ -631,6 +905,8 @@ export default function App({ icons }) {
             <label>Custom endpoint URL<input value={dmSettings.endpoint} onChange={(e) => setDmSettings({ ...dmSettings, endpoint: e.target.value })} placeholder="https://your-dm-endpoint.example/turn" /></label>
             <button type="submit" className="ghost">Save DM settings</button>
           </form>
+          <button type="button" className="ghost secondary" onClick={testDmEngine}>Test DM engine</button>
+          <p className="test-result">{dmTestStatus}</p>
           <p className="muted">Never paste API keys here. The public Pages app only stores an endpoint URL; model keys belong behind your own server.</p>
         </Panel>
 
@@ -665,8 +941,8 @@ export default function App({ icons }) {
           {pendingPatches.length === 0 ? <p className="muted">No pending world changes. New discoveries will appear here before becoming canon.</p> : <>
             <button className="ghost" onClick={approveAllPatches}>Approve all</button>
             <ul className="list patches">{pendingPatches.map((patch) => <li key={patch.id}>
-              <strong>{patch.node.title}</strong>
-              <span>{patch.node.summary}</span>
+              <strong>{patchTitle(patch)}</strong>
+              <span>{patchSummary(patch)}</span>
               <small>{patch.reason}</small>
               <div className="button-row">
                 <button onClick={() => approvePatch(patch.id)}>Approve</button>
@@ -693,7 +969,7 @@ export default function App({ icons }) {
         </Panel>
 
         <Panel title="World Nodes" icon={Map}>
-          <ul className="list">{worldNodes.map((n, idx) => <li key={n.id || idx}><strong>{n.title}</strong>{n.summary}</li>)}</ul>
+          <ul className="list">{worldNodes.map((n, idx) => <li key={n.id || idx}><strong>{n.title}</strong>{n.summary}{n.facts?.length ? <small>{n.facts.join(' · ')}</small> : null}</li>)}</ul>
         </Panel>
       </aside>
     </main>
