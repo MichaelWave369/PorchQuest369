@@ -147,7 +147,7 @@ Status: landed and hardened through v0.8.9.
 
 ## v0.9 — unified UI polish
 
-Status: landed and hardened through v0.9.3.
+Status: landed and hardened through v0.9.4.
 
 - public Pages entrypoint moved to standalone unified shells with only base styles plus the current version stylesheet
 - compact hero and promotion digest badge
@@ -167,8 +167,12 @@ Status: landed and hardened through v0.9.3.
 - v0.9.2 route graph wrapping for long scene IDs, labels, and conditions
 - v0.9.2.1 layout repair restored the full v22 card/grid layout under the v23 reliability patch
 - v0.9.3 overview action polish with Next Action, Playtest Momentum, Review Snapshot, and recent export tracking
+- v0.9.4 action completion receipts for export, playtest, edit, import, route, and queue actions
+- v0.9.4 Export Review Bundle action from the overview and export center
+- v0.9.4 maintainer queue local actions: reviewed, deferred, and needs changes
+- v0.9.4 session action log and export receipt list persisted in localStorage
 
-## v0.9.4 — next focus
+## v0.9.5 — next focus
 
 - improve route graph visuals with directional arrows and scene-node grouping
 - add recent packs and favorite packs stored locally
