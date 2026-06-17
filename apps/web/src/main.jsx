@@ -4,10 +4,11 @@ import './styles.css';
 import './v7.css';
 import './v8.css';
 import './v9.css';
-import AppV9 from './AppV9.jsx';
+import './v10.css';
+import AppV10 from './AppV10.jsx';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AppV9 />
+    <AppV10 />
   </React.StrictMode>
 );
