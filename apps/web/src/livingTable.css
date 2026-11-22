@@ -92,3 +92,45 @@
 .lt-memory-list small { color: #d5b67a; font-size: .7rem; text-transform: uppercase; margin-right: .45rem; }
 .lt-companions .lt-card-actions { flex-wrap: wrap; }
 @media (max-width: 560px) { .lt-review .lt-card-actions button { flex: 1; text-align: center; } }
+
+
+/* R3 tactical scene board. Accessible buttons, no external game runtime. */
+.lt-battle-intro { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; margin: 1rem 0; }
+.lt-battle-intro > div { flex: 1; min-width: 240px; }
+.lt-battle-intro .lt-primary { flex: 0 0 auto; }
+.lt-battle { margin: 1rem 0; }
+.lt-battle-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .8rem; align-items: start; margin-bottom: 1.2rem; }
+.lt-battle-heading-tools { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
+.lt-battle-heading-tools strong { color: #e6ce9e; font-size: .76rem; letter-spacing: .08em; }
+.lt-battle-layout { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap: 1.4rem; align-items: start; }
+.lt-battle-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; width: 100%; max-width: 660px; background: #141820; padding: 6px; border-radius: .6rem; border: 1px solid #69604d; }
+.lt-root .lt-cell { aspect-ratio: 1 / 1; min-height: 38px; min-width: 0; padding: .1rem; border: 1px solid #3a4548; border-radius: .28rem; background: #24322e; color: #a9b9b6; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0; text-align: center; }
+.lt-root .lt-cell:nth-child(2n) { background: #293832; }
+.lt-root .lt-cell.lt-ally { background: #756341; color: #fff0c7; border-color: #cfb778; }
+.lt-root .lt-cell.lt-enemy { background: #813f3d; color: #ffe3db; border-color: #d58b80; }
+.lt-root .lt-cell.lt-legal { box-shadow: inset 0 0 0 2px #80d1be; border-color: #9ee5d4; }
+.lt-root .lt-cell.lt-selected { outline: 3px solid #f0d486; outline-offset: -3px; }
+.lt-root .lt-cell:disabled { opacity: 1; cursor: default; }
+.lt-root .lt-cell:hover:not(:disabled) { background: #465d4b; }
+.lt-root .lt-cell small { font-size: clamp(.5rem, .9vw, .69rem); line-height: 1.15; }
+.lt-token { font-size: clamp(.9rem,2.8vw,1.5rem); font-weight: 850; }
+.lt-battle-legend { color: #aeb8b2; font-size: .8rem; margin-top: .55rem; }
+.lt-battle-tools { display: grid; gap: .65rem; }
+.lt-battle-tools h3 { margin: .45rem 0 0; }
+.lt-battle-actors { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .45rem; }
+.lt-battle-actors button { display: grid; gap: .3rem; }
+.lt-battle-actors button small { color: #c2b7a5; font-size: .73rem; }
+.lt-battle-actors button.lt-picked { border-color: #eec67f; background: #464032; }
+.lt-battle-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .5rem; }
+.lt-battle-actions button { text-align: center; }
+.lt-battle-log { border: 1px solid #3e4143; border-radius: .5rem; padding: .6rem; max-height: 280px; overflow: auto; background: #141920; }
+.lt-battle-log p { border-bottom: 1px solid #3d4243; padding: .55rem; margin: 0; display: grid; gap: .3rem; font-size: .82rem; }
+.lt-battle-log p:last-child { border: none; }
+.lt-battle-log small { color: #cdb785; font-size: .68rem; text-transform: uppercase; }
+.lt-battle-enemy-line { margin: 0; }
+@media (max-width: 850px) { .lt-battle-layout { grid-template-columns: 1fr; } }
+@media (max-width: 390px) {
+  .lt-battle-grid { gap: 2px; padding: 3px; }
+  .lt-root .lt-cell { min-height: 30px; }
+  .lt-battle-actions,.lt-battle-actors { grid-template-columns: 1fr; }
+}
