@@ -1,4 +1,5 @@
 import { emptyAgency, normalizeAgency } from './livingTableAgencyState.js';
+import { normalizeCombat } from './livingTableCombatState.js';
 
 // Living Table R1: deterministic gameplay is the only authority over campaign state.
 // AI narration is stored separately and cannot write rolls, inventory, or world facts.
@@ -74,7 +75,7 @@ export function createSession(inputPack, heroId = 'seeker', name = '') {
   const preset = HEROES.find(h => h.id === heroId) || HEROES[0];
   const hero = { ...preset, name: text(name, 60) || preset.name };
   return { version: 1, pack, hero, seed: 369, turn: 0, sceneId: pack.scenes[0].id, hp: preset.hp,
-    inventory: [preset.item], clues: [], companions: [], facts: [], narration: [], agency: emptyAgency(),
+    inventory: [preset.item], clues: [], companions: [], facts: [], narration: [], agency: emptyAgency(), combat: null,
     history: [{ type: 'start', turn: 0, message: hero.name + ' begins ' + pack.title + '.' }] };
 }
 
@@ -91,6 +92,7 @@ function record(session, entry) {
 }
 
 export function recruit(session, companionId) {
+  if (session.combat?.status === 'active') return session;
   const companion = COMPANIONS.find(c => c.id === companionId);
   if (!companion || session.companions.includes(companionId) || session.companions.length >= 3) return session;
   return record({ ...session, companions: [...session.companions, companionId] },
@@ -98,6 +100,7 @@ export function recruit(session, companionId) {
 }
 
 export function dismiss(session, companionId) {
+  if (session.combat?.status === 'active') return session;
   if (!session.companions.includes(companionId)) return session;
   const companion = COMPANIONS.find(c => c.id === companionId);
   return record({ ...session, companions: session.companions.filter(id => id !== companionId) },
@@ -105,6 +108,7 @@ export function dismiss(session, companionId) {
 }
 
 export function travel(session, destination) {
+  if (session.combat?.status === 'active') return session;
   const edge = exits(session).find(e => e.to === destination);
   if (!edge) return session; // Never let prose or model replies teleport an actor.
   const next = session.pack.scenes.find(s => s.id === destination);
@@ -114,6 +118,7 @@ export function travel(session, destination) {
 }
 
 export function resolveTurn(session, action, selectedSkill, helperId = '') {
+  if (session.combat?.status === 'active') return session;
   const declared = text(action, 480);
   if (!declared) return session;
   const scene = currentScene(session);
@@ -167,6 +172,7 @@ export function validateSaved(value) {
   if (!HEROES.some(h => h.id === value.hero.id) || !value.companions.every(id => COMPANIONS.some(c => c.id === id))) return false;
   if (!Array.isArray(value.pack.scenes) || value.pack.scenes.length > 80 || !Array.isArray(value.pack.edges) || value.pack.edges.length > 250) return false;
   if (value.agency !== undefined && (!plainObject(value.agency) || Array.isArray(value.agency))) return false;
+  if (value.combat !== undefined && value.combat !== null && !plainObject(value.combat)) return false;
   return value.pack.scenes.some(s => s.id === value.sceneId);
 }
 
@@ -187,5 +193,5 @@ export function safeImport(raw) {
       action: text(e.action, 480), skill: text(e.skill, 40), dc: Number(e.dc) || 0, die: Number(e.die) || 0,
       bonus: Number(e.bonus) || 0, total: Number(e.total) || 0, success: Boolean(e.success) })) };
   // v1 saves without agency load with empty memory. R2 agency is always normalized.
-  return { ...restored, agency: normalizeAgency(value.agency, restored) };
+  return { ...restored, agency: normalizeAgency(value.agency, restored), combat: normalizeCombat(value.combat, restored) };
 }

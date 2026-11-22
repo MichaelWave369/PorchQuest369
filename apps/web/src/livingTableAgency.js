@@ -67,6 +67,7 @@ export function localSuggestion(session, id) {
 }
 
 export function stageCompanionProposal(session, id, proposal, source = 'local') {
+  if (session.combat?.status === 'active') return session;
   const character = actor(session, id);
   const agency = state(session);
   if (!character || agency.pending || !proposal || typeof proposal !== 'object' || Array.isArray(proposal)) return session;
@@ -98,6 +99,7 @@ export function declineCompanionProposal(session) {
 }
 
 export function approveCompanionProposal(session) {
+  if (session.combat?.status === 'active') return session;
   const proposal = pendingProposal(session);
   if (!proposal) return session;
   const character = actor(session, proposal.actor_id);
