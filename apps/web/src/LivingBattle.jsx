@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import EncounterCreator from './EncounterCreator.jsx';
+import { cloneDefaultEncounter, blocked } from './livingTableEncounters.js';
 import { COMPANIONS, currentScene } from './livingTableEngine.js';
 import { goalOf, memoryFor, modelMemoryPacket, pendingProposal } from './livingTableAgency.js';
 import {
@@ -77,21 +79,16 @@ export default function LivingBattle({ session, setSession, apiBase, modelReady,
     } finally { setThinking(false); }
   }
 
-  if (!battle) return <section className="lt-panel lt-battle-intro">
-    <div><div className="lt-eyebrow">TACTICAL MODE · R3</div><h2>Encounter Board</h2>
-      <p>Confront an Ash Wisp and Briar Sentinel on a 7×7 tabletop. Each ally can move, strike, or guard once per round. Enemy turns follow automatically when the party finishes its actions.</p>
-      <p className="lt-help">Battles share the campaign's dice seed, hero HP and canonical ledger. They grant no invented loot.</p>
-    </div>
-    <button className="lt-primary" disabled={busy || session.hp <= 0 || Boolean(pendingProposal(session))}
-      onClick={() => setSession(prev => beginEncounter(prev))}>Start Tactical Encounter</button>
-  </section>;
+  if (!battle) return <EncounterCreator session={session} setSession={setSession}
+    busy={busy || thinking} onNotice={onNotice} />;
 
   const grid = Array.from({length:SIZE*SIZE},(_,i) => ({x:i%SIZE,y:Math.floor(i/SIZE)}));
   const livingUnits = battle.units.filter(u => u.hp > 0);
+  const encounter = battle.encounter || cloneDefaultEncounter();
   return <section className="lt-panel lt-battle" aria-label="Tactical encounter board">
     <div className="lt-battle-heading">
       <div><div className="lt-eyebrow">TACTICAL ENCOUNTER · ROUND {battle.round}</div>
-        <h2>{currentScene(session).title} · Battle Board</h2>
+        <h2>{encounter.name} · {currentScene(session).title}</h2>
         <p>Party actions resolve through the rules engine, never directly through an AI response.</p></div>
       <div className="lt-battle-heading-tools"><strong>{battle.status === 'active' ? 'COMBAT ACTIVE' : battle.status.toUpperCase()}</strong>
         <button disabled={busy || thinking} onClick={() => setSession(prev => leaveEncounter(prev))}>
@@ -102,22 +99,23 @@ export default function LivingBattle({ session, setSession, apiBase, modelReady,
         <div className="lt-battle-grid" role="group" aria-label="Seven by seven combat grid">
           {grid.map(({x,y}) => {
             const unit = livingUnits.find(u => u.x === x && u.y === y);
+            const isWall = blocked(encounter.walls,x,y);
             const id = unit?.side === 'enemy' ? 'attack:'+unit.id : 'move:'+x+':'+y;
             const legal = options.some(o => o.id === id);
             const isSelected = unit?.id === activeActor?.id;
             return <button type="button" key={x+'-'+y} disabled={thinking || busy || battle.status !== 'active' || (!unit?.side?.includes('ally') && !legal)}
-              className={'lt-cell'+(unit?.side === 'enemy' ? ' lt-enemy' : unit ? ' lt-ally' : '')+
+              className={'lt-cell'+(isWall ? ' lt-wall' : '')+(unit?.side === 'enemy' ? ' lt-enemy' : unit ? ' lt-ally' : '')+
                 (legal ? ' lt-legal' : '')+(isSelected ? ' lt-selected' : '')}
               onClick={() => touchCell(unit,x,y)}
-              aria-label={'Column '+(x+1)+', row '+(y+1)+': '+(unit ? unit.name+' '+unit.hp+' HP' : 'empty')+
+              aria-label={'Column '+(x+1)+', row '+(y+1)+': '+(isWall ? 'Solid wall' : unit ? unit.name+' '+unit.hp+' HP' : 'empty')+
                 (legal ? ', legal '+(id.startsWith('attack') ? 'attack' : 'move') : '')}
               title={unit ? unit.name+' ('+unit.hp+'/'+unit.max_hp+' HP)' : 'Tile '+(x+1)+','+(y+1)}>
-              {unit ? <><span className="lt-token">{unit.id === 'hero' ? 'H' : unit.side === 'enemy' ? '!' : unit.name.slice(0,1).toUpperCase()}</span>
+              {isWall ? <span aria-hidden="true">▦</span> : unit ? <><span className="lt-token">{unit.id === 'hero' ? 'H' : unit.side === 'enemy' ? '!' : unit.name.slice(0,1).toUpperCase()}</span>
                 <small>{unit.hp} HP</small></> : <small>{x+1},{y+1}</small>}
             </button>;
           })}
         </div>
-        <p className="lt-battle-legend">Gold: hero & companions · Red: opponents · Outlined: selected · Lit tiles: legal move or attack.</p>
+        <p className="lt-battle-legend">Gold: hero & companions · Red: opponents · Outlined: selected · Lit tiles: legal moves or attacks · ▦: solid wall.</p>
       </div>
       <div className="lt-battle-tools">
         <h3>Party turns</h3>
