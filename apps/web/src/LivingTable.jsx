@@ -328,11 +328,47 @@ export default function LivingTable() {
             return <article key={companion.id}><div><strong>{companion.name}</strong><small>{companion.role} · {companion.skill}</small><p>{companion.character}</p></div>
               <div className="lt-card-actions">{joined ? <>
                 <button disabled={busy} onClick={() => askCompanion(companion.id)}>Ask</button>
+                <button disabled={busy || !!pending} onClick={() => requestProposal(companion.id)}>Suggest action</button>
                 <button disabled={busy} onClick={() => { setSession(dismiss(session, companion.id)); if (helperId === companion.id) setHelperId(''); }}>Dismiss</button>
               </> : <button disabled={busy || session.companions.length >= 3}
                 onClick={() => setSession(recruit(session, companion.id))}>Recruit</button>}</div>
             </article>; })}</div>
-          <p className="lt-help">Companions have distinct voices when the model is connected. Their suggestions are advice, not unapproved autonomous actions.</p>
+          <p className="lt-help">Companions have independent goals and can suggest governed actions. Only your explicit approval lets an action enter the game.</p>
+          {pending && <div className="lt-review" role="region" aria-label="Companion action proposal">
+            <div className="lt-eyebrow">ACTION REVIEW · {pending.source.toUpperCase()}</div>
+            <h3>{COMPANIONS.find(c => c.id === pending.actor_id)?.name} suggests an investigation</h3>
+            <p>{pending.intent}</p>
+            <p>Skill: <b>{pending.skill}</b> · Proposed on turn {pending.anchor.turn} · No die rolled yet.</p>
+            <div className="lt-card-actions">
+              <button className="lt-primary" onClick={() => decideProposal(true)} disabled={busy}>Approve & Roll</button>
+              <button onClick={() => decideProposal(false)} disabled={busy}>Decline</button>
+            </div>
+          </div>}
+          {session.companions.length > 0 && <div className="lt-memory-editor">
+            <h3>Companion purpose and memory</h3>
+            <label>Select companion<select value={activeCompanion} onChange={e => chooseCompanion(e.target.value)}>
+              {session.companions.map(id => <option key={id} value={id}>{COMPANIONS.find(c => c.id === id)?.name}</option>)}
+            </select></label>
+            <p className="lt-help">Current goal: {goalOf(session, activeCompanion)}</p>
+            <form onSubmit={saveGoal}>
+              <label>Edit their goal<input maxLength={160} value={goalDraft} placeholder={goalOf(session, activeCompanion)}
+                onChange={e => setGoalDraft(e.target.value)} /></label>
+              <button type="submit" disabled={!goalDraft.trim()}>Save goal</button>
+            </form>
+            <form onSubmit={saveMemory}>
+              <label>Add a remembered detail<textarea rows={2} maxLength={240} value={memoryNote}
+                onChange={e => setMemoryNote(e.target.value)} placeholder="What should this companion remember?" /></label>
+              <label>Visibility<select value={memoryScope} onChange={e => setMemoryScope(e.target.value)}>
+                <option value="private">Selected companion only</option>
+                <option value="party">Party-shared</option>
+              </select></label>
+              <button type="submit" disabled={!memoryNote.trim()}>Save memory</button>
+            </form>
+            <div className="lt-memory-list">{memoryFor(session, activeCompanion).slice(-6).map((m, i) =>
+              <p key={i}><small>{m.visibility} · {m.source} · turn {m.at_turn}</small> {m.note}</p>
+            )}</div>
+            <p className="lt-help">“Private” means model-context isolation, not encryption. Notes live in browser storage and unencrypted campaign exports.</p>
+          </div>}
         </section>
         <section className="lt-panel"><div className="lt-eyebrow">PLAYER AUTHORITY</div><h2>World ledger</h2>
           <form onSubmit={approveFact}><label>Add a canon fact<input value={fact} maxLength={240}
