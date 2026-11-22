@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ClassicAdventure from './AppV31.jsx';
 import LivingTable from './LivingTable.jsx';
 import './livingTable.css';
+import './livingTableSwitch.css';
 
 // Preserve the full v1.0.6 campaign/studio experience behind a reversible switch.
 // Living Table uses a separate save key; no automatic migration or deletion occurs.
