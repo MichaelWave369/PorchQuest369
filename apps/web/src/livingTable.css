@@ -134,3 +134,32 @@
   .lt-root .lt-cell { min-height: 30px; }
   .lt-battle-actions,.lt-battle-actors { grid-template-columns: 1fr; }
 }
+
+
+/* R4: in-game encounter authoring and safely enumerated original monster stats */
+.lt-encounter-editor { margin:1rem 0; }
+.lt-encounter-header { display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem; }
+.lt-encounter-header > div:first-child { flex:1;min-width:230px; }
+.lt-encounter-header .lt-card-actions { gap:.55rem;flex-wrap:wrap; }
+.lt-encounter-settings { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.8rem;margin:1rem 0 1.3rem; }
+.lt-encounter-layout { display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:1.5rem; }
+.lt-encounter-map { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;background:#171b20;border:1px solid #655c50;border-radius:.6rem;padding:6px;max-width:600px; }
+.lt-root .lt-encounter-tile { aspect-ratio:1;min-height:35px;min-width:0;text-align:center;display:grid;place-items:center;padding:0;border-radius:.27rem;border:1px solid #5d6b59;background:#34443a;color:#c2d4be;font-weight:800;font-size:clamp(.85rem,2vw,1.3rem); }
+.lt-theme-ruins .lt-encounter-tile { background:#484345; }
+.lt-theme-grove .lt-encounter-tile { background:#253f38; }
+.lt-root .lt-encounter-tile.wall { background:#5d5c59; color:#efe7d6; }
+.lt-root .lt-encounter-tile.party { background:#79613c;color:#f5e1a8; }
+.lt-root .lt-encounter-tile.foe { background:#8a4c40;color:#ffded0; }
+.lt-root .lt-encounter-tile:disabled { opacity:1;cursor:default; }
+.lt-root .lt-encounter-tile:focus-visible { outline:2px solid #ffe2a1;outline-offset:1px; }
+.lt-root .lt-encounter-tile:hover:not(:disabled) { filter:brightness(1.25); }
+.lt-encounter-monsters { display:grid;gap:.7rem;align-content:start; }
+.lt-encounter-monsters article { background:#26272b;border:1px solid #57504b;border-radius:.6rem;padding:.8rem; }
+.lt-encounter-monsters article strong { display:block;color:#e8d3a5;margin:.3rem 0; }
+.lt-encounter-monsters article p { font-size:.82rem;margin:.4rem 0; }
+.lt-encounter-enemy-fields { display:grid;gap:.6rem; }
+.lt-encounter-invalid { color:#f5a39e !important; border-left:3px solid #f5a39e;padding-left:.7rem; }
+.lt-encounter-valid { color:#94d6b6 !important; border-left:3px solid #94d6b6;padding-left:.7rem; }
+.lt-root .lt-cell.lt-wall, .lt-root .lt-cell.lt-wall:disabled { background:#64605c;color:#fff1dd;border:1px solid #96918b;opacity:1; }
+@media(max-width:900px) { .lt-encounter-layout { grid-template-columns:1fr; } .lt-encounter-settings { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:550px) { .lt-encounter-settings { grid-template-columns:1fr; } .lt-encounter-header .lt-card-actions { width:100%; } .lt-encounter-header .lt-card-actions button { flex:1;text-align:center; } .lt-encounter-map { gap:2px;padding:3px; } .lt-root .lt-encounter-tile { min-height:30px; } }
