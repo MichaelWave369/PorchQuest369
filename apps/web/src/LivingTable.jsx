@@ -4,6 +4,7 @@ import {
   safeImport, currentScene, exits, recruit, dismiss, travel, resolveTurn,
   addFact, addNarration, fallbackNarration
 } from './livingTableEngine.js';
+import LivingBattle from './LivingBattle.jsx';
 import { goalOf, memoryFor, modelMemoryPacket, setCompanionGoal, rememberForCompanion,
   localSuggestion, stageCompanionProposal, pendingProposal,
   declineCompanionProposal, approveCompanionProposal } from './livingTableAgency.js';
@@ -268,7 +269,7 @@ export default function LivingTable() {
 
   return <main className="lt-root">
     <header className="lt-header">
-      <div><div className="lt-eyebrow">PORCHQUEST369 · R2 COMPANION AGENCY</div><h1>The Living Table</h1>
+      <div><div className="lt-eyebrow">PORCHQUEST369 · R3 TACTICAL ENCOUNTERS</div><h1>The Living Table</h1>
       <p>Build worlds. Recruit companions. Tell the story together. Dice and canon stay accountable.</p></div>
       <div className="lt-status"><span className={modelReady ? 'lt-online' : 'lt-offline'} />
       {modelReady ? 'AI DM · ' + modelName : 'SCRIPTED DM · LOCAL PLAY'}</div>
@@ -291,6 +292,7 @@ export default function LivingTable() {
     </section> : <>
       <div className="lt-worldbar"><div><small>WORLD</small><strong>{session.pack.title}</strong><span>{session.pack.summary}</span></div>
       <div><small>TURN</small><strong>{session.turn}</strong></div><div><small>HERO</small><strong>{session.hero.name}</strong><span>HP {session.hp} · +{session.hero.bonus}</span></div></div>
+      <LivingBattle session={session} setSession={setSession} apiBase={apiBase} modelReady={modelReady} busy={busy} onNotice={setNotice} />
 
       <div className="lt-grid">
         <section className="lt-panel lt-scene"><div className="lt-eyebrow">ACT {scene.act || 'I'} · CURRENT LOCATION</div>
@@ -298,7 +300,7 @@ export default function LivingTable() {
           <p>Suggested check: <b>{scene.skill}</b>, difficulty {scene.dc}.</p>
           <div className="lt-divider" />
           <h3>Choose a path</h3><div className="lt-routes">{routes.length ? routes.map((route, i) =>
-            <button disabled={busy} key={route.id + i} onClick={() => move(route.to)}>{route.label} <small>{session.pack.scenes.find(s => s.id === route.to)?.title}</small></button>
+            <button disabled={busy || session.combat?.status === 'active'} key={route.id + i} onClick={() => move(route.to)}>{route.label} <small>{session.pack.scenes.find(s => s.id === route.to)?.title}</small></button>
           ) : <p>No authored exits. Continue exploring here or open Creator Studio to add routes.</p>}</div>
           <h3>Your discoveries</h3><p>{session.clues.length ? session.clues.join(' • ') : 'No discovered clues yet.'}</p>
         </section>
@@ -312,8 +314,8 @@ export default function LivingTable() {
                 <option value="">No assist</option>
                 {session.companions.map(id => { const c = COMPANIONS.find(x => x.id === id);
                   return <option key={id} value={id}>{c.name} (+2 for {c.skill})</option>; })}</select></label></div>
-            <button className="lt-primary" type="submit" disabled={busy || !draftAction.trim()}>Roll & Resolve Action</button>
-          </form><p className="lt-help">The deterministic engine rolls first. A matching recruited companion grants +2. The AI describes the recorded result, never replaces it.</p>
+            <button className="lt-primary" type="submit" disabled={busy || session.combat?.status === 'active' || !draftAction.trim()}>Roll & Resolve Action</button>
+          </form><p className="lt-help">{session.combat?.status === 'active' ? 'Resolve or retreat from the tactical encounter before exploring the story. ' : ''}The deterministic engine rolls first. A matching recruited companion grants +2. The AI describes the recorded result, never replaces it.</p>
           <h3>Conversation</h3><label>Ask the DM or a party member<input value={prompt} maxLength={480} placeholder="What do you think we should do?" onChange={e => setPrompt(e.target.value)} /></label>
           <button onClick={askDm} disabled={busy}>Ask Dungeon Master</button>
           <div className="lt-narration" aria-live="polite">{session.narration.length ? [...session.narration].reverse().slice(0,6).map((line, i) =>
@@ -328,9 +330,9 @@ export default function LivingTable() {
             return <article key={companion.id}><div><strong>{companion.name}</strong><small>{companion.role} · {companion.skill}</small><p>{companion.character}</p></div>
               <div className="lt-card-actions">{joined ? <>
                 <button disabled={busy} onClick={() => askCompanion(companion.id)}>Ask</button>
-                <button disabled={busy || !!pending} onClick={() => requestProposal(companion.id)}>Suggest action</button>
-                <button disabled={busy} onClick={() => { setSession(dismiss(session, companion.id)); if (helperId === companion.id) setHelperId(''); }}>Dismiss</button>
-              </> : <button disabled={busy || session.companions.length >= 3}
+                <button disabled={busy || !!pending || session.combat?.status === 'active'} onClick={() => requestProposal(companion.id)}>Suggest action</button>
+                <button disabled={busy || session.combat?.status === 'active'} onClick={() => { setSession(dismiss(session, companion.id)); if (helperId === companion.id) setHelperId(''); }}>Dismiss</button>
+              </> : <button disabled={busy || session.combat?.status === 'active' || session.companions.length >= 3}
                 onClick={() => setSession(recruit(session, companion.id))}>Recruit</button>}</div>
             </article>; })}</div>
           <p className="lt-help">Companions have independent goals and can suggest governed actions. Only your explicit approval lets an action enter the game.</p>
