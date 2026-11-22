@@ -4,6 +4,9 @@ import {
   safeImport, currentScene, exits, recruit, dismiss, travel, resolveTurn,
   addFact, addNarration, fallbackNarration
 } from './livingTableEngine.js';
+import { goalOf, memoryFor, modelMemoryPacket, setCompanionGoal, rememberForCompanion,
+  localSuggestion, stageCompanionProposal, pendingProposal,
+  declineCompanionProposal, approveCompanionProposal } from './livingTableAgency.js';
 
 const PACK_KEY = 'porchquest369.routePack.v7';
 const DEFAULT_API = 'http://127.0.0.1:8787';
@@ -44,7 +47,8 @@ function contextForModel(state, speaker, companion, action) {
     clues: state.clues.slice(-12),
     action: String(action).slice(0, 480),
     last_result: previewEvent(state).slice(0, 700),
-    recent_events: state.history.slice(-7).map(e => e.message.slice(0, 700))
+    recent_events: state.history.slice(-7).map(e => e.message.slice(0, 700)),
+    ...(speaker === 'companion' && companion ? modelMemoryPacket(state, companion.id) : {})
   };
 }
 
@@ -62,6 +66,10 @@ export default function LivingTable() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('The local game works without a model. Connecting to AI is optional.');
   const [prompt, setPrompt] = useState('');
+  const [selectedCompanion, setSelectedCompanion] = useState('');
+  const [memoryNote, setMemoryNote] = useState('');
+  const [memoryScope, setMemoryScope] = useState('private');
+  const [goalDraft, setGoalDraft] = useState('');
 
   useEffect(() => {
     if (!session) return;
@@ -71,11 +79,17 @@ export default function LivingTable() {
 
   const scene = useMemo(() => session ? currentScene(session) : null, [session]);
   const routes = useMemo(() => session ? exits(session) : [], [session]);
+  const activeCompanion = session?.companions.includes(selectedCompanion)
+    ? selectedCompanion : (session?.companions[0] || '');
+  const pending = session ? pendingProposal(session) : null;
 
   function begin() {
     if (session && !window.confirm('Start a new campaign? Export first if you want to keep this one.')) return;
     const next = createSession(studioPack(), heroId, heroName);
     setSession(next);
+    setSelectedCompanion('');
+    setGoalDraft('');
+    setMemoryNote('');
     setSkill(currentScene(next).skill);
     setNotice('A new world is ready. Recruit your party and tell the DM what you do.');
   }
@@ -184,9 +198,77 @@ export default function LivingTable() {
     if (next !== session) { setSession(next); setFact(''); setNotice('Player-approved fact added to the campaign ledger.'); }
   }
 
+
+  async function requestProposal(companionId) {
+    if (!session || busy || pending) return;
+    const suggestion = localSuggestion(session, companionId);
+    if (!suggestion) return;
+    if (!modelReady) {
+      setSession(stageCompanionProposal(session, companionId, suggestion, 'local'));
+      setNotice('A rules-based suggestion is ready to review. Nothing has happened yet.');
+      return;
+    }
+    const anchor = session;
+    setBusy(true);
+    try {
+      const character = COMPANIONS.find(c => c.id === companionId);
+      const payload = contextForModel(session, 'companion', character, 'Suggest a useful action toward your goal.');
+      const response = await fetch(apiBase.trim().replace(/\/+$/, '') + '/api/living-table/propose', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw Error('HTTP ' + response.status);
+      const data = await response.json();
+      if (data.non_canonical !== true || !data.proposal) throw Error('Invalid proposal contract.');
+      setSession(prev => prev === anchor ? stageCompanionProposal(prev, companionId, data.proposal, 'model') : prev);
+      setNotice('Model proposal staged. Review before it becomes a game action.');
+    } catch (error) {
+      setModelReady(false);
+      setSession(prev => prev === anchor ? stageCompanionProposal(prev, companionId, suggestion, 'local') : prev);
+      setNotice('Model proposal unavailable. A labeled local suggestion is available instead. ' +
+        String(error.message || error));
+    } finally { setBusy(false); }
+  }
+
+  function chooseCompanion(id) {
+    setSelectedCompanion(id);
+    setGoalDraft(session ? goalOf(session, id) : '');
+    setMemoryNote('');
+  }
+
+  function saveGoal(event) {
+    event.preventDefault();
+    if (!session || !activeCompanion) return;
+    const next = setCompanionGoal(session, activeCompanion, goalDraft);
+    if (next !== session) {
+      setSession(next);
+      setNotice('Companion goal saved.');
+    }
+  }
+
+  function saveMemory(event) {
+    event.preventDefault();
+    if (!session || !activeCompanion || !memoryNote.trim()) return;
+    const next = rememberForCompanion(session, activeCompanion, memoryNote, memoryScope);
+    if (next !== session) {
+      setSession(next);
+      setMemoryNote('');
+      setNotice('Memory saved. Private notes are scoped to this companion only.');
+    }
+  }
+
+  function decideProposal(approve) {
+    if (!session || busy || !pending) return;
+    const next = approve ? approveCompanionProposal(session) : declineCompanionProposal(session);
+    if (next === session) { setNotice('Proposal expired or was invalid.'); return; }
+    setSession(next);
+    setNotice(approve
+      ? 'Approved companion action resolved by deterministic dice.'
+      : 'Proposal declined. No roll or time advancement occurred.');
+  }
+
   return <main className="lt-root">
     <header className="lt-header">
-      <div><div className="lt-eyebrow">PORCHQUEST369 · R1 EXPERIMENTAL</div><h1>The Living Table</h1>
+      <div><div className="lt-eyebrow">PORCHQUEST369 · R2 COMPANION AGENCY</div><h1>The Living Table</h1>
       <p>Build worlds. Recruit companions. Tell the story together. Dice and canon stay accountable.</p></div>
       <div className="lt-status"><span className={modelReady ? 'lt-online' : 'lt-offline'} />
       {modelReady ? 'AI DM · ' + modelName : 'SCRIPTED DM · LOCAL PLAY'}</div>
@@ -246,11 +328,47 @@ export default function LivingTable() {
             return <article key={companion.id}><div><strong>{companion.name}</strong><small>{companion.role} · {companion.skill}</small><p>{companion.character}</p></div>
               <div className="lt-card-actions">{joined ? <>
                 <button disabled={busy} onClick={() => askCompanion(companion.id)}>Ask</button>
+                <button disabled={busy || !!pending} onClick={() => requestProposal(companion.id)}>Suggest action</button>
                 <button disabled={busy} onClick={() => { setSession(dismiss(session, companion.id)); if (helperId === companion.id) setHelperId(''); }}>Dismiss</button>
               </> : <button disabled={busy || session.companions.length >= 3}
                 onClick={() => setSession(recruit(session, companion.id))}>Recruit</button>}</div>
             </article>; })}</div>
-          <p className="lt-help">Companions have distinct voices when the model is connected. Their suggestions are advice, not unapproved autonomous actions.</p>
+          <p className="lt-help">Companions have independent goals and can suggest governed actions. Only your explicit approval lets an action enter the game.</p>
+          {pending && <div className="lt-review" role="region" aria-label="Companion action proposal">
+            <div className="lt-eyebrow">ACTION REVIEW · {pending.source.toUpperCase()}</div>
+            <h3>{COMPANIONS.find(c => c.id === pending.actor_id)?.name} suggests an investigation</h3>
+            <p>{pending.intent}</p>
+            <p>Skill: <b>{pending.skill}</b> · Proposed on turn {pending.anchor.turn} · No die rolled yet.</p>
+            <div className="lt-card-actions">
+              <button className="lt-primary" onClick={() => decideProposal(true)} disabled={busy}>Approve & Roll</button>
+              <button onClick={() => decideProposal(false)} disabled={busy}>Decline</button>
+            </div>
+          </div>}
+          {session.companions.length > 0 && <div className="lt-memory-editor">
+            <h3>Companion purpose and memory</h3>
+            <label>Select companion<select value={activeCompanion} onChange={e => chooseCompanion(e.target.value)}>
+              {session.companions.map(id => <option key={id} value={id}>{COMPANIONS.find(c => c.id === id)?.name}</option>)}
+            </select></label>
+            <p className="lt-help">Current goal: {goalOf(session, activeCompanion)}</p>
+            <form onSubmit={saveGoal}>
+              <label>Edit their goal<input maxLength={160} value={goalDraft} placeholder={goalOf(session, activeCompanion)}
+                onChange={e => setGoalDraft(e.target.value)} /></label>
+              <button type="submit" disabled={!goalDraft.trim()}>Save goal</button>
+            </form>
+            <form onSubmit={saveMemory}>
+              <label>Add a remembered detail<textarea rows={2} maxLength={240} value={memoryNote}
+                onChange={e => setMemoryNote(e.target.value)} placeholder="What should this companion remember?" /></label>
+              <label>Visibility<select value={memoryScope} onChange={e => setMemoryScope(e.target.value)}>
+                <option value="private">Selected companion only</option>
+                <option value="party">Party-shared</option>
+              </select></label>
+              <button type="submit" disabled={!memoryNote.trim()}>Save memory</button>
+            </form>
+            <div className="lt-memory-list">{memoryFor(session, activeCompanion).slice(-6).map((m, i) =>
+              <p key={i}><small>{m.visibility} · {m.source} · turn {m.at_turn}</small> {m.note}</p>
+            )}</div>
+            <p className="lt-help">“Private” means model-context isolation, not encryption. Notes live in browser storage and unencrypted campaign exports.</p>
+          </div>}
         </section>
         <section className="lt-panel"><div className="lt-eyebrow">PLAYER AUTHORITY</div><h2>World ledger</h2>
           <form onSubmit={approveFact}><label>Add a canon fact<input value={fact} maxLength={240}

@@ -78,3 +78,17 @@
   .lt-worldbar > div:last-child { border: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .lt-root button { transition: none; } }
+
+
+/* R2: companion decisions and private-by-context memory notes */
+.lt-review { margin: 1.1rem 0; padding: 1rem; border: 1px solid #b99859; border-radius: .7rem; background: #302b28; }
+.lt-review h3 { margin: .5rem 0; color: #f5dda7; }
+.lt-review .lt-card-actions { margin-top: 1rem; }
+.lt-memory-editor { display: grid; gap: .8rem; border-top: 1px solid #45414a; margin-top: 1.1rem; padding-top: .5rem; }
+.lt-memory-editor form { display: grid; gap: .6rem; }
+.lt-memory-editor form button { justify-self: start; }
+.lt-memory-list { display: grid; gap: .4rem; }
+.lt-memory-list p { background: #292b32; border-left: 2px solid #9e987c; border-radius: .25rem; margin: 0; padding: .6rem .7rem; overflow-wrap: anywhere; }
+.lt-memory-list small { color: #d5b67a; font-size: .7rem; text-transform: uppercase; margin-right: .45rem; }
+.lt-companions .lt-card-actions { flex-wrap: wrap; }
+@media (max-width: 560px) { .lt-review .lt-card-actions button { flex: 1; text-align: center; } }
