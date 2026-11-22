@@ -3,7 +3,7 @@
 import { COMPANIONS, currentScene, nextDie } from './livingTableEngine.js';
 import { normalizeCombat } from './livingTableCombatState.js';
 import { normalizeAgency } from './livingTableAgencyState.js';
-import { goalOf, memoryFor } from './livingTableAgency.js';
+import { goalOf, memoryFor, pendingProposal } from './livingTableAgency.js';
 
 const SIZE = 7;
 const distance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
@@ -27,7 +27,7 @@ function threatAc(unit) { return unit.side === 'enemy' ? 11 : 12; }
 function label(session, id) { return id === 'hero' ? session.hero.name : companionName(id); }
 
 export function beginEncounter(session) {
-  if (!session || session.hp <= 0 || session.combat || session.agency?.pending) return session;
+  if (!session || session.hp <= 0 || session.combat || pendingProposal(session)) return session;
   const seats = [[1, 2], [4, 2], [5, 2]];
   const units = [{ id: 'hero', name: session.hero.name, side: 'ally',
     x: 3, y: 2, hp: session.hp, max_hp: Math.max(session.hp, session.hero.hp), guarded: false }];
@@ -201,7 +201,7 @@ export function localTactic(session, actorId) {
 
 export function stageTactic(session, actorId, optionId, source = 'local') {
   const combat = session?.combat;
-  if (!combat || combat.status !== 'active' || combat.pending || session.agency?.pending ||
+  if (!combat || combat.status !== 'active' || combat.pending || pendingProposal(session) ||
       actorId === 'hero' || !session.companions.includes(actorId) ||
       !battleOptions(session, actorId).some(o => o.id === optionId)) return session;
   return { ...session, combat: { ...combat, pending: {
