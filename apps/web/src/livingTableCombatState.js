@@ -1,3 +1,5 @@
+import { normalizeEncounter, ENEMY_TEMPLATES, blocked } from './livingTableEncounters.js';
+
 // R3 save boundary. Never hydrate arbitrary unit IDs, script instructions or callbacks.
 const ALLOWED_FOES = { "foe-1": "Ash Wisp", "foe-2": "Briar Sentinel" };
 const COMPANION_NAMES = { mira: 'Mira', kael: 'Kael', nessa: 'Nessa', bram: 'Bram', iri: 'Iri' };
@@ -9,6 +11,8 @@ const plain = v => v && typeof v === 'object' && !Array.isArray(v);
 export function normalizeCombat(raw, session) {
   if (!plain(raw) || raw.version !== 1 || raw.scene_id !== session?.sceneId ||
       !['active','won','lost'].includes(raw.status) || !Array.isArray(raw.units)) return null;
+  const encounter = raw.encounter === undefined ? null : normalizeEncounter(raw.encounter,session);
+  if (raw.encounter !== undefined && !encounter) return null;
   const expected = ['hero', ...(session.companions || []), 'foe-1', 'foe-2'];
   if (raw.units.length !== expected.length ||
       expected.some(id => raw.units.filter(unit => unit?.id === id).length !== 1)) return null;
@@ -20,10 +24,14 @@ export function normalizeCombat(raw, session) {
         !Number.isSafeInteger(u.hp) || !Number.isSafeInteger(u.max_hp) ||
         u.max_hp < 1 || u.max_hp > 30 || u.hp < 0 || u.hp > u.max_hp) return null;
     const side = id.startsWith('foe-') ? 'enemy' : 'ally';
+    if (encounter && blocked(encounter.walls,u.x,u.y)) return null;
+    if (encounter && side === 'enemy' && u.max_hp > ENEMY_TEMPLATES[encounter.foes.find(f => f.id === id).type].max_hp) return null;
     const key = u.x + ',' + u.y;
     if (u.hp > 0 && places.has(key)) return null;
     if (u.hp > 0) places.add(key);
-    const label = id === 'hero' ? session.hero.name : (ALLOWED_FOES[id] || COMPANION_NAMES[id] || id);
+    const template = encounter?.foes.find(f => f.id === id);
+    const label = id === 'hero' ? session.hero.name :
+      (template ? ENEMY_TEMPLATES[template.type].name : (ALLOWED_FOES[id] || COMPANION_NAMES[id] || id));
     units.push({ id, name: label.slice(0, 60), side, x: u.x, y: u.y, hp: u.hp, max_hp: u.max_hp,
       guarded: Boolean(u.guarded) });
   }
@@ -50,5 +58,6 @@ export function normalizeCombat(raw, session) {
     pending = { actor_id: p.actor_id, option_id: p.option_id, source: p.source,
       anchor: { scene_id: session.sceneId, turn: session.turn, seed: session.seed, seq, round } };
   }
-  return { version: 1, scene_id: session.sceneId, status, round, seq, units, acted, pending };
+  return { version: 1, scene_id: session.sceneId, status, round, seq, units, acted, pending,
+    ...(encounter ? { encounter } : {}) };
 }
