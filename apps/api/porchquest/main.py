@@ -15,8 +15,10 @@ from .dm_engine import fallback_turn
 from .questpack import campaign_to_questpack
 from .rewards import draw_reward
 from .world_ledger import apply_world_patch
+from .living_table import router as living_table_router
 
 app = FastAPI(title="PorchQuest369 API", version="0.8.6")
+app.include_router(living_table_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],

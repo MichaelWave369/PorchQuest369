@@ -21,6 +21,10 @@ jobs:
           pip install -r requirements.txt
       - name: Compile API package
         run: python -m compileall apps/api/porchquest
+      - name: Living Table API boundary tests
+        run: |
+          cd apps/api
+          python -m unittest discover -s tests -v
 
   web:
     runs-on: ubuntu-latest
@@ -33,6 +37,10 @@ jobs:
         run: |
           cd apps/web
           npm install
+      - name: Living Table deterministic game tests
+        run: |
+          cd apps/web
+          npm run test:living
       - name: Build web app
         run: |
           cd apps/web
