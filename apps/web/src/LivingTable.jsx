@@ -4,6 +4,9 @@ import {
   safeImport, currentScene, exits, recruit, dismiss, travel, resolveTurn,
   addFact, addNarration, fallbackNarration
 } from './livingTableEngine.js';
+import { goalOf, memoryFor, modelMemoryPacket, setCompanionGoal, rememberForCompanion,
+  localSuggestion, stageCompanionProposal, pendingProposal,
+  declineCompanionProposal, approveCompanionProposal } from './livingTableAgency.js';
 
 const PACK_KEY = 'porchquest369.routePack.v7';
 const DEFAULT_API = 'http://127.0.0.1:8787';
@@ -44,7 +47,8 @@ function contextForModel(state, speaker, companion, action) {
     clues: state.clues.slice(-12),
     action: String(action).slice(0, 480),
     last_result: previewEvent(state).slice(0, 700),
-    recent_events: state.history.slice(-7).map(e => e.message.slice(0, 700))
+    recent_events: state.history.slice(-7).map(e => e.message.slice(0, 700)),
+    ...(speaker === 'companion' && companion ? modelMemoryPacket(state, companion.id) : {})
   };
 }
 
@@ -62,6 +66,10 @@ export default function LivingTable() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState('The local game works without a model. Connecting to AI is optional.');
   const [prompt, setPrompt] = useState('');
+  const [selectedCompanion, setSelectedCompanion] = useState('');
+  const [memoryNote, setMemoryNote] = useState('');
+  const [memoryScope, setMemoryScope] = useState('private');
+  const [goalDraft, setGoalDraft] = useState('');
 
   useEffect(() => {
     if (!session) return;
@@ -71,11 +79,17 @@ export default function LivingTable() {
 
   const scene = useMemo(() => session ? currentScene(session) : null, [session]);
   const routes = useMemo(() => session ? exits(session) : [], [session]);
+  const activeCompanion = session?.companions.includes(selectedCompanion)
+    ? selectedCompanion : (session?.companions[0] || '');
+  const pending = session ? pendingProposal(session) : null;
 
   function begin() {
     if (session && !window.confirm('Start a new campaign? Export first if you want to keep this one.')) return;
     const next = createSession(studioPack(), heroId, heroName);
     setSession(next);
+    setSelectedCompanion('');
+    setGoalDraft('');
+    setMemoryNote('');
     setSkill(currentScene(next).skill);
     setNotice('A new world is ready. Recruit your party and tell the DM what you do.');
   }
@@ -186,7 +200,7 @@ export default function LivingTable() {
 
   return <main className="lt-root">
     <header className="lt-header">
-      <div><div className="lt-eyebrow">PORCHQUEST369 · R1 EXPERIMENTAL</div><h1>The Living Table</h1>
+      <div><div className="lt-eyebrow">PORCHQUEST369 · R2 COMPANION AGENCY</div><h1>The Living Table</h1>
       <p>Build worlds. Recruit companions. Tell the story together. Dice and canon stay accountable.</p></div>
       <div className="lt-status"><span className={modelReady ? 'lt-online' : 'lt-offline'} />
       {modelReady ? 'AI DM · ' + modelName : 'SCRIPTED DM · LOCAL PLAY'}</div>
