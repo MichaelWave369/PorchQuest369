@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { COMPANIONS, currentScene } from './livingTableEngine.js';
-import { goalOf, memoryFor, modelMemoryPacket } from './livingTableAgency.js';
+import { goalOf, memoryFor, modelMemoryPacket, pendingProposal } from './livingTableAgency.js';
 import {
   battleOptions, beginEncounter, resolveBattleAction, localTactic,
   stageTactic, currentTactic, decideTactic, leaveEncounter
@@ -82,7 +82,7 @@ export default function LivingBattle({ session, setSession, apiBase, modelReady,
       <p>Confront an Ash Wisp and Briar Sentinel on a 7×7 tabletop. Each ally can move, strike, or guard once per round. Enemy turns follow automatically when the party finishes its actions.</p>
       <p className="lt-help">Battles share the campaign's dice seed, hero HP and canonical ledger. They grant no invented loot.</p>
     </div>
-    <button className="lt-primary" disabled={busy || session.hp <= 0 || Boolean(session.agency?.pending)}
+    <button className="lt-primary" disabled={busy || session.hp <= 0 || Boolean(pendingProposal(session))}
       onClick={() => setSession(prev => beginEncounter(prev))}>Start Tactical Encounter</button>
   </section>;
 
