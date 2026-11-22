@@ -40,8 +40,9 @@ export function validateEncounter(value, session = null) {
       !Array.isArray(value.walls) || value.walls.length > 18 ||
       !Array.isArray(value.foes) || value.foes.length !== 2) return 'Invalid encounter format.';
   const used = new Set();
-  const reserved = positionsForParty(session || {companions:['mira','kael','nessa']})
-    .map(p => tileKey(p.x,p.y));
+  // Reserve all four starting seats even when the current party is smaller.
+  // Otherwise recruiting after saving an arena could place actors inside walls.
+  const reserved = PARTY_SPAWNS.map(p => tileKey(p.x,p.y));
   for(const p of reserved) used.add(p);
   for(const w of value.walls){
     if(!plain(w) || !coord(w.x) || !coord(w.y)) return 'A wall is outside the arena.';
