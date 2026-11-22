@@ -137,7 +137,6 @@ function enemyPhase(session) {
     battle.round += 1;
     battle.units.forEach(u => { u.guarded = false; });
   }
-  battle = normalizeCombat({ ...battle, status: alive(find(battle,'hero')) ? 'active' : 'lost' }, state) || battle;
   state = { ...state, combat: battle };
   return markOutcome(state, battle);
 }
