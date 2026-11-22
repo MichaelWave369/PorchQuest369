@@ -2,6 +2,7 @@
 // All combat commands are enumerated, checked twice and logged before acceptance.
 import { COMPANIONS, currentScene, nextDie } from './livingTableEngine.js';
 import { normalizeCombat } from './livingTableCombatState.js';
+import { ENEMY_TEMPLATES, encounterFor, blocked } from './livingTableEncounters.js';
 import { normalizeAgency } from './livingTableAgencyState.js';
 import { goalOf, memoryFor, pendingProposal } from './livingTableAgency.js';
 
@@ -10,6 +11,20 @@ const distance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 const find = (battle, id) => battle.units.find(u => u.id === id);
 const alive = u => u && u.hp > 0;
 const occupied = (battle, x, y) => battle.units.some(u => alive(u) && u.x === x && u.y === y);
+const wall = (battle,x,y) => blocked(battle.encounter?.walls || [],x,y);
+export function lineOfSight(battle,a,b) {
+  let x=a.x, y=a.y; const dx=Math.abs(b.x-x),dy=Math.abs(b.y-y);
+  const sx=x < b.x ? 1 : -1, sy=y < b.y ? 1 : -1;
+  let error=dx-dy;
+  while(x!==b.x || y!==b.y) {
+    const twice=2*error;
+    if(twice > -dy){ error-=dy; x+=sx; }
+    if(twice < dx){ error+=dx; y+=sy; }
+    if(x===b.x && y===b.y) break;
+    if(wall(battle,x,y)) return false;
+  }
+  return true;
+}
 const record = (session, type, message, fields = {}) => ({
   ...session,
   history: [...session.history, { type, turn: session.turn, message, ...fields }].slice(-100)
@@ -17,17 +32,23 @@ const record = (session, type, message, fields = {}) => ({
 function companionName(id) {
   return COMPANIONS.find(c => c.id === id)?.name || id;
 }
-function attackRange(id) {
-  return id === 'kael' ? 3 : (id === 'bram' || id === 'foe-2' ? 1 : 2);
+function monster(battle,id) {
+  const type = battle?.encounter?.foes?.find(x=>x.id===id)?.type;
+  return ENEMY_TEMPLATES[type] || null;
 }
-function attackBonus(id, session) {
-  return id === 'hero' ? Number(session.hero.bonus) || 2 : (id.startsWith('foe-') ? 2 : 3);
+function attackRange(id,battle) {
+  return monster(battle,id)?.range ?? (id === 'kael' ? 3 : (id === 'bram' || id === 'foe-2' ? 1 : 2));
 }
-function threatAc(unit) { return unit.side === 'enemy' ? 11 : 12; }
+function attackBonus(id, session, battle) {
+  return id === 'hero' ? Number(session.hero.bonus) || 2 : (id.startsWith('foe-') ? (monster(battle,id)?.attack_bonus ?? 2) : 3);
+}
+function threatAc(unit,battle) { return unit.side === 'enemy' ? (monster(battle,unit.id)?.ac ?? 11) : 12; }
+function damageBase(id,battle) { return monster(battle,id)?.damage ?? 2; }
 function label(session, id) { return id === 'hero' ? session.hero.name : companionName(id); }
 
 export function beginEncounter(session) {
   if (!session || session.hp <= 0 || session.combat || pendingProposal(session)) return session;
+  const design = encounterFor(session);
   const seats = [[1, 2], [4, 2], [5, 2]];
   const units = [{ id: 'hero', name: session.hero.name, side: 'ally',
     x: 3, y: 2, hp: session.hp, max_hp: Math.max(session.hp, session.hero.hp), guarded: false }];
@@ -38,14 +59,14 @@ export function beginEncounter(session) {
       units.push({ id, name: friend.name, side: 'ally', x, y, hp: 9, max_hp: 9, guarded: false });
     }
   });
-  units.push({ id: 'foe-1', name: 'Ash Wisp', side: 'enemy',
-    x: 2, y: 4, hp: 7, max_hp: 7, guarded: false });
-  units.push({ id: 'foe-2', name: 'Briar Sentinel', side: 'enemy',
-    x: 4, y: 4, hp: 10, max_hp: 10, guarded: false });
+  design.foes.forEach(f => units.push({
+    id:f.id, name:ENEMY_TEMPLATES[f.type].name, side:'enemy',
+    x:f.x, y:f.y, hp:f.hp, max_hp:f.hp, guarded:false
+  }));
   const battle = { version: 1, scene_id: session.sceneId, status: 'active',
-    round: 1, seq: 0, units, acted: [], pending: null };
+    round: 1, seq: 0, units, acted: [], pending: null, encounter:design };
   return record({ ...session, combat: battle }, 'encounter_start',
-    'An Ash Wisp and Briar Sentinel confront the party at ' + currentScene(session).title + '.');
+    'Encounter: ' + design.name + ' at ' + currentScene(session).title + '.');
 }
 
 export function battleOptions(session, actorId) {
@@ -56,13 +77,13 @@ export function battleOptions(session, actorId) {
   const options = [];
   for (const [dx, dy, direction] of [[0,-1,'north'],[1,0,'east'],[0,1,'south'],[-1,0,'west']]) {
     const x = unit.x + dx, y = unit.y + dy;
-    if (x >= 0 && x < SIZE && y >= 0 && y < SIZE && !occupied(battle, x, y)) {
+    if (x >= 0 && x < SIZE && y >= 0 && y < SIZE && !occupied(battle, x, y) && !wall(battle,x,y)) {
       options.push({ id: 'move:' + x + ':' + y, kind: 'move', label: 'Move ' + direction,
         x, y, actor_id: actorId });
     }
   }
   for (const enemy of battle.units.filter(u => u.side === 'enemy' && alive(u))) {
-    if (distance(unit, enemy) <= attackRange(actorId)) {
+    if (distance(unit, enemy) <= attackRange(actorId,battle) && lineOfSight(battle,unit,enemy)) {
       options.push({ id: 'attack:' + enemy.id, kind: 'attack',
         label: 'Strike ' + enemy.name, target_id: enemy.id, actor_id: actorId });
     }
@@ -106,24 +127,25 @@ function enemyPhase(session) {
     if (!target) break;
     let message;
     let detail = {};
-    if (distance(foe, target) <= attackRange(id)) {
+    if (distance(foe, target) <= attackRange(id,battle) && lineOfSight(battle,foe,target)) {
       const rolled = nextDie(state.seed);
       state = { ...state, seed: rolled.seed };
-      const total = rolled.value + attackBonus(id, state);
-      const hit = total >= threatAc(target);
-      const base = hit ? 2 + (rolled.value % 3) : 0;
+      const attack=attackBonus(id,state,battle);
+      const total = rolled.value + attack;
+      const hit = total >= threatAc(target,battle);
+      const base = hit ? damageBase(id,battle) + (rolled.value % 3) : 0;
       const damage = Math.max(0, base - (target.guarded ? 2 : 0));
       target.hp = Math.max(0, target.hp - damage);
       if (target.id === 'hero') state = { ...state, hp: target.hp };
       message = foe.name + ' attacks ' + target.name + ': d20 ' + rolled.value +
-        ' + 2 = ' + total + ' vs AC ' + threatAc(target) +
+        ' + ' + attack + ' = ' + total + ' vs AC ' + threatAc(target,battle) +
         (hit ? '; hit for ' + damage + ' damage.' : '; miss.');
-      detail = { die: rolled.value, bonus: 2, total, target_id: target.id, damage, success: hit };
+      detail = { die: rolled.value, bonus: attack, total, target_id: target.id, damage, success: hit };
     } else {
       // Deterministic one-step pursuit, avoiding occupied cells.
       const moves = [[0,-1],[1,0],[0,1],[-1,0]].map(([dx,dy]) =>
         ({ x: foe.x + dx, y: foe.y + dy }))
-        .filter(p => p.x >= 0 && p.x < SIZE && p.y >= 0 && p.y < SIZE && !occupied(battle,p.x,p.y))
+        .filter(p => p.x >= 0 && p.x < SIZE && p.y >= 0 && p.y < SIZE && !occupied(battle,p.x,p.y) && !wall(battle,p.x,p.y))
         .sort((a,b) => distance(a,target) - distance(b,target) || a.y - b.y || a.x - b.x);
       const step = moves.find(p => distance(p,target) < distance(foe,target));
       if (step) { foe.x = step.x; foe.y = step.y; }
@@ -159,13 +181,13 @@ export function resolveBattleAction(session, actorId, optionId) {
     const enemy = find(battle, option.target_id);
     const roll = nextDie(state.seed);
     state = { ...state, seed: roll.seed };
-    const bonus = attackBonus(actorId, state);
+    const bonus = attackBonus(actorId,state,battle);
     const total = roll.value + bonus;
-    const hit = total >= threatAc(enemy);
-    const damage = hit ? 2 + (roll.value % 3) : 0;
+    const hit = total >= threatAc(enemy,battle);
+    const damage = hit ? damageBase(actorId,battle) + (roll.value % 3) : 0;
     enemy.hp = Math.max(0, enemy.hp - damage);
     message = label(state, actorId) + ' strikes ' + enemy.name + ': d20 ' + roll.value +
-      ' + ' + bonus + ' = ' + total + ' vs AC 11 (' + (hit ? 'hit' : 'miss') + ')' +
+      ' + ' + bonus + ' = ' + total + ' vs AC ' + threatAc(enemy,battle) + ' (' + (hit ? 'hit' : 'miss') + ')' +
       (hit ? ', ' + damage + ' damage.' : '.');
     details = { ...details, die: roll.value, bonus, total, success: hit,
       damage, target_id: enemy.id };
