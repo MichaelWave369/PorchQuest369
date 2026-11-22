@@ -1,0 +1,7 @@
+
+.lt-switch { background:#15171c; border-bottom:1px solid #565048; color:#f0e6d2; padding:.7rem clamp(1rem,3vw,2rem); display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; font:600 .84rem system-ui,sans-serif; }
+.lt-switch strong { font-size:.8rem; letter-spacing:.16em; }
+.lt-switch > div { display:flex; gap:.45rem; flex-wrap:wrap; }
+.lt-switch button { font:inherit; color:#d5cfbf; border:1px solid #484848; border-radius:.5rem; background:#25262c; padding:.55rem .85rem; cursor:pointer; }
+.lt-switch button.active { color:#231d16; background:#d4aa5f; border-color:#e9c77f; }
+.lt-switch button:focus-visible { outline:2px solid #f0c77b; outline-offset:2px; }
