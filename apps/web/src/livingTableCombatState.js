@@ -1,5 +1,6 @@
 // R3 save boundary. Never hydrate arbitrary unit IDs, script instructions or callbacks.
 const ALLOWED_FOES = { "foe-1": "Ash Wisp", "foe-2": "Briar Sentinel" };
+const COMPANION_NAMES = { mira: 'Mira', kael: 'Kael', nessa: 'Nessa', bram: 'Bram', iri: 'Iri' };
 const bounded = (n, min, max, fallback) =>
   Number.isSafeInteger(n) && n >= min && n <= max ? n : fallback;
 const validCoord = n => Number.isSafeInteger(n) && n >= 0 && n < 7;
@@ -22,7 +23,7 @@ export function normalizeCombat(raw, session) {
     const key = u.x + ',' + u.y;
     if (u.hp > 0 && places.has(key)) return null;
     if (u.hp > 0) places.add(key);
-    const label = id === 'hero' ? session.hero.name : (ALLOWED_FOES[id] || id);
+    const label = id === 'hero' ? session.hero.name : (ALLOWED_FOES[id] || COMPANION_NAMES[id] || id);
     units.push({ id, name: label.slice(0, 60), side, x: u.x, y: u.y, hp: u.hp, max_hp: u.max_hp,
       guarded: Boolean(u.guarded) });
   }
