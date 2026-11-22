@@ -1,3 +1,5 @@
+import { emptyAgency, normalizeAgency } from './livingTableAgencyState.js';
+
 // Living Table R1: deterministic gameplay is the only authority over campaign state.
 // AI narration is stored separately and cannot write rolls, inventory, or world facts.
 export const SAVE_KEY = 'porchquest369.livingTable.v1';
@@ -72,7 +74,7 @@ export function createSession(inputPack, heroId = 'seeker', name = '') {
   const preset = HEROES.find(h => h.id === heroId) || HEROES[0];
   const hero = { ...preset, name: text(name, 60) || preset.name };
   return { version: 1, pack, hero, seed: 369, turn: 0, sceneId: pack.scenes[0].id, hp: preset.hp,
-    inventory: [preset.item], clues: [], companions: [], facts: [], narration: [],
+    inventory: [preset.item], clues: [], companions: [], facts: [], narration: [], agency: emptyAgency(),
     history: [{ type: 'start', turn: 0, message: hero.name + ' begins ' + pack.title + '.' }] };
 }
 
@@ -164,6 +166,7 @@ export function validateSaved(value) {
   if (!Number.isSafeInteger(value.turn) || value.turn < 0 || !Number.isSafeInteger(value.seed)) return false;
   if (!HEROES.some(h => h.id === value.hero.id) || !value.companions.every(id => COMPANIONS.some(c => c.id === id))) return false;
   if (!Array.isArray(value.pack.scenes) || value.pack.scenes.length > 80 || !Array.isArray(value.pack.edges) || value.pack.edges.length > 250) return false;
+  if (value.agency !== undefined && (!plainObject(value.agency) || Array.isArray(value.agency))) return false;
   return value.pack.scenes.some(s => s.id === value.sceneId);
 }
 
@@ -174,7 +177,7 @@ export function safeImport(raw) {
   // Strip unexpected top-level fields and normalize the authored pack.
   const pack = normalizePack(value.pack);
   if (!pack.scenes.some(s => s.id === value.sceneId)) throw Error('The saved location is missing.');
-  return { version: 1, pack, hero: { ...HEROES.find(h => h.id === value.hero.id), name: text(value.hero.name, 60) },
+  const restored = { version: 1, pack, hero: { ...HEROES.find(h => h.id === value.hero.id), name: text(value.hero.name, 60) },
     seed: value.seed >>> 0, turn: value.turn, sceneId: value.sceneId, hp: Number(value.hp) || 0,
     inventory: (Array.isArray(value.inventory) ? value.inventory : []).slice(0, 100).map(x => text(x)),
     clues: value.clues.slice(0, 100).map(x => text(x)), companions: [...new Set(value.companions)],
@@ -183,4 +186,6 @@ export function safeImport(raw) {
     history: value.history.slice(-100).map(e => ({ type: text(e.type, 30), turn: Number(e.turn) || 0, message: text(e.message, 700),
       action: text(e.action, 480), skill: text(e.skill, 40), dc: Number(e.dc) || 0, die: Number(e.die) || 0,
       bonus: Number(e.bonus) || 0, total: Number(e.total) || 0, success: Boolean(e.success) })) };
+  // v1 saves without agency load with empty memory. R2 agency is always normalized.
+  return { ...restored, agency: normalizeAgency(value.agency, restored) };
 }
