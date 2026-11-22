@@ -198,6 +198,74 @@ export default function LivingTable() {
     if (next !== session) { setSession(next); setFact(''); setNotice('Player-approved fact added to the campaign ledger.'); }
   }
 
+
+  async function requestProposal(companionId) {
+    if (!session || busy || pending) return;
+    const suggestion = localSuggestion(session, companionId);
+    if (!suggestion) return;
+    if (!modelReady) {
+      setSession(stageCompanionProposal(session, companionId, suggestion, 'local'));
+      setNotice('A rules-based suggestion is ready to review. Nothing has happened yet.');
+      return;
+    }
+    const anchor = session;
+    setBusy(true);
+    try {
+      const character = COMPANIONS.find(c => c.id === companionId);
+      const payload = contextForModel(session, 'companion', character, 'Suggest a useful action toward your goal.');
+      const response = await fetch(apiBase.trim().replace(/\/+$/, '') + '/api/living-table/propose', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw Error('HTTP ' + response.status);
+      const data = await response.json();
+      if (data.non_canonical !== true || !data.proposal) throw Error('Invalid proposal contract.');
+      setSession(prev => prev === anchor ? stageCompanionProposal(prev, companionId, data.proposal, 'model') : prev);
+      setNotice('Model proposal staged. Review before it becomes a game action.');
+    } catch (error) {
+      setModelReady(false);
+      setSession(prev => prev === anchor ? stageCompanionProposal(prev, companionId, suggestion, 'local') : prev);
+      setNotice('Model proposal unavailable. A labeled local suggestion is available instead. ' +
+        String(error.message || error));
+    } finally { setBusy(false); }
+  }
+
+  function chooseCompanion(id) {
+    setSelectedCompanion(id);
+    setGoalDraft(session ? goalOf(session, id) : '');
+    setMemoryNote('');
+  }
+
+  function saveGoal(event) {
+    event.preventDefault();
+    if (!session || !activeCompanion) return;
+    const next = setCompanionGoal(session, activeCompanion, goalDraft);
+    if (next !== session) {
+      setSession(next);
+      setNotice('Companion goal saved.');
+    }
+  }
+
+  function saveMemory(event) {
+    event.preventDefault();
+    if (!session || !activeCompanion || !memoryNote.trim()) return;
+    const next = rememberForCompanion(session, activeCompanion, memoryNote, memoryScope);
+    if (next !== session) {
+      setSession(next);
+      setMemoryNote('');
+      setNotice('Memory saved. Private notes are scoped to this companion only.');
+    }
+  }
+
+  function decideProposal(approve) {
+    if (!session || busy || !pending) return;
+    const next = approve ? approveCompanionProposal(session) : declineCompanionProposal(session);
+    if (next === session) { setNotice('Proposal expired or was invalid.'); return; }
+    setSession(next);
+    setNotice(approve
+      ? 'Approved companion action resolved by deterministic dice.'
+      : 'Proposal declined. No roll or time advancement occurred.');
+  }
+
   return <main className="lt-root">
     <header className="lt-header">
       <div><div className="lt-eyebrow">PORCHQUEST369 · R2 COMPANION AGENCY</div><h1>The Living Table</h1>
