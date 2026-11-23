@@ -1,5 +1,6 @@
 import { emptyAgency, normalizeAgency } from './livingTableAgencyState.js';
 import { normalizeCombat } from './livingTableCombatState.js';
+import { normalizeEncounter } from './livingTableEncounters.js';
 
 // Living Table R1: deterministic gameplay is the only authority over campaign state.
 // AI narration is stored separately and cannot write rolls, inventory, or world facts.
@@ -75,7 +76,7 @@ export function createSession(inputPack, heroId = 'seeker', name = '') {
   const preset = HEROES.find(h => h.id === heroId) || HEROES[0];
   const hero = { ...preset, name: text(name, 60) || preset.name };
   return { version: 1, pack, hero, seed: 369, turn: 0, sceneId: pack.scenes[0].id, hp: preset.hp,
-    inventory: [preset.item], clues: [], companions: [], facts: [], narration: [], agency: emptyAgency(), combat: null,
+    inventory: [preset.item], clues: [], companions: [], facts: [], narration: [], agency: emptyAgency(), combat: null, encounterDesign: null,
     history: [{ type: 'start', turn: 0, message: hero.name + ' begins ' + pack.title + '.' }] };
 }
 
@@ -193,5 +194,7 @@ export function safeImport(raw) {
       action: text(e.action, 480), skill: text(e.skill, 40), dc: Number(e.dc) || 0, die: Number(e.die) || 0,
       bonus: Number(e.bonus) || 0, total: Number(e.total) || 0, success: Boolean(e.success) })) };
   // v1 saves without agency load with empty memory. R2 agency is always normalized.
-  return { ...restored, agency: normalizeAgency(value.agency, restored), combat: normalizeCombat(value.combat, restored) };
+  return { ...restored, agency: normalizeAgency(value.agency, restored),
+    combat: normalizeCombat(value.combat, restored),
+    encounterDesign: normalizeEncounter(value.encounterDesign,restored) };
 }

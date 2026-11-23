@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview",
-    "test:living": "node --test src/livingTableEngine.test.mjs src/livingTableAgency.test.mjs src/livingTableCombat.test.mjs"
+    "test:living": "node --test src/livingTableEngine.test.mjs src/livingTableAgency.test.mjs src/livingTableCombat.test.mjs src/livingTableEncounters.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
